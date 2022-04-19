@@ -1,6 +1,6 @@
 echo "Data dumping...."
 
-echo "USE Master;" > ./init_db/migration_data.sql
+echo "USE Master;" > ./init_db/3_migration_data.sql
 docker exec -it kithubsys-db-1 mysqldump -u root -proot_password -t Master members discord_accounts >> ./init_db/3_migration_data.sql
 
 echo "Down docker containers...."
