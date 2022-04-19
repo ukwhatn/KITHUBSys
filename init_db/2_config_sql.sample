@@ -1,3 +1,5 @@
+Use Master;
+
 ALTER TABLE `config`
     DISABLE KEYS;
 INSERT INTO `config` (`id`, `name`, `value`)

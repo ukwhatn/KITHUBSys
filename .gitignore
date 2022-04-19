@@ -159,6 +159,6 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-init_db/*_data.sql
+init_db/2_config.sql
+init_db/3_migration_data.sql
 maria_data/*
-
