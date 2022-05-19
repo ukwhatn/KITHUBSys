@@ -22,6 +22,6 @@ bot = commands.Bot(help_command=None,
                    )
 
 bot.load_extension("cogs.Admin")
-# bot.load_extension("cogs.ErrorHandler")
+bot.load_extension("cogs.ThreadKeeper")
 
 bot.run(bot_config.TOKEN)

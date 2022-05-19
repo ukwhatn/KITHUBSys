@@ -19,9 +19,9 @@ ENV TERM xterm
 
 RUN pip install --upgrade pip
 RUN pip install --upgrade setuptools
-RUN python -m pip install discord.py
-RUN python -m pip install -U py-cord --pre
-RUN python -m pip install mysql-connector-python
+RUN python -m pip install --upgrade discord.py
+RUN python -m pip install --upgrade py-cord --pre
+RUN python -m pip install --upgrade mysql-connector-python
 
 RUN echo "Hello, ${BOT_NAME} ready!"
 
