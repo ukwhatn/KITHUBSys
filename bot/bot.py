@@ -17,7 +17,7 @@ logging.basicConfig(
 # bot init
 bot = commands.Bot(help_command=None,
                    case_insensitive=True,
-                   activity=discord.Game("KITHUBSys"),
+                   activity=discord.Game("©Yuki Watanabe"),
                    intents=discord.Intents.all()
                    )
 

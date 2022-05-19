@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 import discord
+from config.message_config import MessageTemplates
 from discord.ext import commands, tasks
 
 
@@ -20,14 +21,14 @@ class ThreadKeeper(commands.Cog):
         logging.info(f"[Keep] thread: {thread.guild.name}/{thread.parent.name}/{thread.name}")
         if thread.auto_archive_duration != 1440:
             await thread.edit(auto_archive_duration=1440)
-            await asyncio.sleep(10)
+            await asyncio.sleep(3)
 
         if thread.archive is True:
             return
 
         try:
             await thread.edit(auto_archive_duration=60)
-            await asyncio.sleep(10)
+            await asyncio.sleep(3)
             await thread.edit(auto_archive_duration=1440)
         except Exception as e:
             logging.exception(e, exc_info=True)
@@ -41,6 +42,13 @@ class ThreadKeeper(commands.Cog):
                     for thread in channel.threads:
                         await self.extend_archive_duration(thread)
         logging.info("[Keep] loop finished")
+
+    @commands.Cog.listener()
+    async def on_thread_create(self, thread: discord.Thread):
+        logging.info(f"[New] {thread.name}")
+        await thread.join()
+        msg = await thread.send(MessageTemplates.on_thread_create_main())
+        await msg.edit(content=f"{msg.content}{MessageTemplates.on_thread_create_roles()}")
 
 
 def setup(bot):
