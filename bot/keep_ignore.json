@@ -3,19 +3,12 @@
         "guilds": [],
         "categories": [],
         "channels": [],
-        "threads": [
-            977784154756362311,
-            977817496205787206
-        ]
+        "threads": []
     },
     "notify": {
-        "guilds": [
-            490892087668244480
-        ],
+        "guilds": [],
         "categories": [],
-        "channels": [
-            977708640045785108
-        ],
+        "channels": [],
         "threads": []
     }
 }
