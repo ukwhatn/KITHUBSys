@@ -1,0 +1,21 @@
+{
+    "keep": {
+        "guilds": [],
+        "categories": [],
+        "channels": [],
+        "threads": [
+            977784154756362311,
+            977817496205787206
+        ]
+    },
+    "notify": {
+        "guilds": [
+            490892087668244480
+        ],
+        "categories": [],
+        "channels": [
+            977708640045785108
+        ],
+        "threads": []
+    }
+}
