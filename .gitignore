@@ -162,3 +162,4 @@ cython_debug/
 init_db/2_config.sql
 init_db/3_migration_data.sql
 maria_data/*
+bot/keep_ignore.json
