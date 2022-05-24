@@ -23,5 +23,9 @@ bot = commands.Bot(help_command=None,
 
 bot.load_extension("cogs.Admin")
 bot.load_extension("cogs.ThreadKeeper")
+#bot.load_extension("cogs.MessageDeleteWatcher")
+bot.load_extension("cogs.MessageDeleter")
+bot.load_extension("cogs.PinMessage")
+
 
 bot.run(bot_config.TOKEN)
