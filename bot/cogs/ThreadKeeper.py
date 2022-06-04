@@ -4,6 +4,7 @@ import logging
 
 import discord
 from config.message_config import MessageTemplates
+from config import bot_config
 from discord.commands import Option, slash_command
 from discord.ext import commands, tasks
 
@@ -44,6 +45,7 @@ class ThreadKeeper(commands.Cog):
             if ctx.guild.id not in ignore_data[category]["guilds"]:
                 ignore_data[category]["guilds"].append(ctx.guild.id)
                 self.logger.info(f"Guild {ctx.guild.name}({ctx.guild.id})を除外しました。")
+                await bot_config.NOTIFY_TO_OWNER(self.bot, f"🧐 Add to {category} ignore: Guild {ctx.guild.name}({ctx.guild.id})")
         else:
             key = None
             if type(ctx.channel) is discord.channel.TextChannel:
@@ -54,6 +56,7 @@ class ThreadKeeper(commands.Cog):
                 if ctx.channel.id not in ignore_data[category][key + "s"]:
                     ignore_data[category][key + "s"].append(ctx.channel.id)
                     self.logger.info(f"{key} {ctx.channel.name}({ctx.channel.id})を除外しました。")
+                    await bot_config.NOTIFY_TO_OWNER(self.bot, f"🧐 Add to {category} ignore: {key} {ctx.guild.name}({ctx.guild.id})")
 
         self.set_ignore_data(ignore_data)
 
@@ -80,6 +83,7 @@ class ThreadKeeper(commands.Cog):
     @tasks.loop(hours=4)
     async def thread_keep_loop(self):
         self.logger.info("[Keep] loop start")
+        await bot_config.NOTIFY_TO_OWNER(self.bot, f"👀 Thread keeping......")
         for guild in self.bot.guilds:
             for channel in guild.channels:
                 if type(channel) is discord.channel.TextChannel:
@@ -100,9 +104,11 @@ class ThreadKeeper(commands.Cog):
     async def on_thread_create(self, thread: discord.Thread):
         if not self.is_ignore_thread(thread, "notify"):
             self.logger.info(f"[New] {thread.name}")
+            await bot_config.NOTIFY_TO_OWNER(self.bot, f"🆕 Thread created: {thread.guild.name}/{thread.parent.name}/{thread.name}")
             await self.invite_roles(thread)
         else:
             self.logger.info(f"[New/Ignored] {thread.name}")
+            await bot_config.NOTIFY_TO_OWNER(self.bot, f"🙈 Ignored thread created: {thread.guild.name}/{thread.parent.name}/{thread.name}")
 
 
 def setup(bot):
