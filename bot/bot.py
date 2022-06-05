@@ -26,6 +26,7 @@ bot.load_extension("cogs.ThreadKeeper")
 #bot.load_extension("cogs.MessageDeleteWatcher")
 bot.load_extension("cogs.MessageDeleter")
 bot.load_extension("cogs.PinMessage")
+bot.load_extension("cogs.MessageExtractor")
 
 
 bot.run(bot_config.TOKEN)
