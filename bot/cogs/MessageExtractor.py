@@ -114,9 +114,10 @@ class MessageExtractor(commands.Cog):
             channel = await self.bot.fetch_channel(payload.channel_id)
             message = await channel.fetch_message(payload.message_id)
             user = await self.bot.fetch_user(payload.user_id)
-            if user.id == channel.owner_id or channel.permissions_for(await channel.guild.fetch_member(user.id)).administrator:
-                await message.delete()
-                self.logger.info(f"Extracted message deleted: {message.guild.name}/{message.channel.name} by {user.name}")
+            if message.author.id == self.bot.user.id:
+                if user.id == channel.owner_id or channel.permissions_for(await channel.guild.fetch_member(user.id)).administrator:
+                    await message.delete()
+                    self.logger.info(f"Extracted message deleted: {message.guild.name}/{message.channel.name} by {user.name}")
 
 
 def setup(bot):
