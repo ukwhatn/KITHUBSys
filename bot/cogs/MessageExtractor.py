@@ -18,7 +18,7 @@ class MessageExtractor(commands.Cog):
 
         self.regex_discord_message_url = (
             'https://(ptb.|canary.)?discord(app)?.com/channels/'
-            '(?P<guild>[0-9]{18})/(?P<channel>[0-9]{18})/(?P<message>[0-9]{18})'
+            '(?P<guild>[0-9]{18,19})/(?P<channel>[0-9]{18,19})/(?P<message>[0-9]{18,19})'
         )
 
     async def get_message_from_id(self, guild_id: int, channel_id: int, message_id: int) -> discord.Message | None:
