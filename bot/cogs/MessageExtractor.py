@@ -21,6 +21,8 @@ class MessageExtractor(commands.Cog):
             '(?P<guild>[0-9]{18,19})/(?P<channel>[0-9]{18,19})/(?P<message>[0-9]{18,19})'
         )
 
+        self.extract_delete_cmd_emoji = "❌"
+
     async def get_message_from_id(self, guild_id: int, channel_id: int, message_id: int) -> discord.Message | None:
         guild = self.bot.get_guild(guild_id)  # type: discord.Guild | None
         if guild is None:
@@ -98,11 +100,23 @@ class MessageExtractor(commands.Cog):
         for founded_message in founded_messages:
             try:
                 if founded_message.content:
-                    await message.channel.send(embed=self.compose_embed(founded_message))
+                    _msg = await message.channel.send(embed=self.compose_embed(founded_message))
+                    await _msg.add_reaction(self.extract_delete_cmd_emoji)
                 for embed in founded_message.embeds:
-                    await message.channel.send(embed=embed)
+                    _msg = await message.channel.send(embed=embed)
+                    await _msg.add_reaction(self.extract_delete_cmd_emoji)
             except BaseException as e:
                 raise
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+        if payload.emoji.name == self.extract_delete_cmd_emoji:
+            channel = await self.bot.fetch_channel(payload.channel_id)
+            message = await channel.fetch_message(payload.message_id)
+            user = await self.bot.fetch_user(payload.user_id)
+            if user.id == channel.owner_id or channel.permissions_for(await channel.guild.fetch_member(user.id)).administrator:
+                await message.delete()
+                self.logger.info(f"Extracted message deleted: {message.guild.name}/{message.channel.name} by {user.name}")
 
 
 def setup(bot):
