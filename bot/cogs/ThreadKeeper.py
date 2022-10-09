@@ -35,7 +35,7 @@ class ThreadKeeper(commands.Cog):
         values = ["keep", "notify"]
         return [value for value in values if value.startswith(ctx.value)]
 
-    @slash_command(name="set_to_ignore", guild_ids=[958663674216718366, 490892087668244480])
+    @slash_command(name="set_to_ignore", guild_ids=[958663674216718366, 490892087668244480, 983648664327192576])
     @commands.has_permissions(ban_members=True)
     async def set_to_ignore(self, ctx: discord.commands.context.ApplicationContext,
                             category: Option(str, 'provide ignore category', autocomplete=autocomplete_set_to_ignore_category),
@@ -98,7 +98,7 @@ class ThreadKeeper(commands.Cog):
     async def invite_roles(self, thread: discord.Thread):
         await thread.join()
         msg = await thread.send(MessageTemplates.on_thread_create_main())
-        await msg.edit(content=f"{msg.content}{MessageTemplates.on_thread_create_roles()}")
+        await msg.edit(content=f"{msg.content}{MessageTemplates.on_thread_create_roles(thread.guild.id)}")
 
     @commands.Cog.listener()
     async def on_thread_create(self, thread: discord.Thread):

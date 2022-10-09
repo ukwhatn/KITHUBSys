@@ -21,7 +21,7 @@ class MessageDeleter(commands.Cog):
         with open("/opt/delete_targets.json", "w") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
 
-    @slash_command(name="set_to_delete_target", guild_ids=[958663674216718366, 490892087668244480])
+    @slash_command(name="set_to_delete_target", guild_ids=[958663674216718366, 490892087668244480, 983648664327192576])
     @commands.has_permissions(ban_members=True)
     async def set_to_delete_target(self, ctx: discord.commands.context.ApplicationContext):
         delete_targets = self.get_delete_targets()  # type: dict[int: list[int]]
@@ -36,7 +36,7 @@ class MessageDeleter(commands.Cog):
 
         await ctx.respond("今後このチャンネルに送信されるすべてのメッセージを削除します。")
 
-    @slash_command(name="remove_from_delete_target", guild_ids=[958663674216718366, 490892087668244480])
+    @slash_command(name="remove_from_delete_target", guild_ids=[958663674216718366, 490892087668244480, 983648664327192576])
     @commands.has_permissions(ban_members=True)
     async def remove_from_delete_target(self, ctx: discord.commands.context.ApplicationContext):
         delete_targets = self.get_delete_targets()  # type: dict[int: list[int]]

@@ -21,8 +21,6 @@ RUN pip install --upgrade pip
 RUN pip install --upgrade setuptools
 RUN python -m pip install --upgrade discord.py
 RUN python -m pip install --upgrade py-cord --pre
-RUN python -m pip install --upgrade mysql-connector-python
-RUN python -m pip install --upgrade tweepy
 
 RUN echo "Hello, ${BOT_NAME} ready!"
 
