@@ -159,19 +159,17 @@ class DataIO(object):
         DataIO()._save_all_data(data)
 
     @staticmethod
-    def get_notify_ignore_targets_in_guild(guild_id: int) -> dict | None:
+    def get_notify_ignore_targets() -> dict | None:
         data = DataIO()._get_all_data()
 
         if "ignore" not in data:
             return None
 
-        if "notify" not in data["ignore"]:
-            return None
-
-        if str(guild_id) in data["ignore"]["notify"]:
-            if len(data["ignore"]["notify"][str(guild_id)]) == 0:
+        if "notify" in data["ignore"]:
+            if len(data["ignore"]["notify"]) == 0:
                 return None
-            return data["ignore"]["notify"][str(guild_id)]
+
+            return data["ignore"]["notify"]
 
         return None
 

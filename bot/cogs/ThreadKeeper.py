@@ -26,7 +26,7 @@ class ThreadKeeper(commands.Cog):
                thread.guild.id in data["guilds"]
 
     def is_notify_ignore_thread(self, thread: discord.Thread):
-        data = DataIO.get_notify_ignore_targets_in_guild(thread.guild.id)
+        data = DataIO.get_notify_ignore_targets()
 
         if data is None:
             return False
@@ -39,7 +39,7 @@ class ThreadKeeper(commands.Cog):
         values = ["keep", "notify"]
         return [value for value in values if value.startswith(ctx.value)]
 
-    @slash_command(name="set_to_ignore")
+    @slash_command(name="set_to_ignore", description="スレッドを除外対象に設定します")
     @commands.has_permissions(ban_members=True)
     async def set_to_ignore(self, ctx: discord.commands.context.ApplicationContext,
                             category: Option(str, 'provide ignore category', autocomplete=autocomplete_set_to_ignore_category),
@@ -113,7 +113,7 @@ class ThreadKeeper(commands.Cog):
                             await self.extend_archive_duration(thread)
         self.logger.info("[Keep] loop finished")
 
-    @slash_command(name="set_notify_role")
+    @slash_command(name="set_notify_role", description="新規作成されたスレッドにinviteするロールを設定します")
     @commands.has_permissions(ban_members=True)
     async def set_notify_role(self, ctx: discord.commands.context.ApplicationContext,
                               roles: str):
