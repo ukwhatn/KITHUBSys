@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 
 import discord
@@ -8,6 +7,8 @@ from config import bot_config
 from discord.commands import Option, slash_command
 from discord.ext import commands, tasks
 
+from util import DataIO
+
 
 class ThreadKeeper(commands.Cog):
     def __init__(self, bot):
@@ -15,52 +16,70 @@ class ThreadKeeper(commands.Cog):
         self.logger = logging.getLogger(type(self).__name__)
         self.logger.setLevel(logging.DEBUG)
 
-    def get_ignore_data(self) -> dict:
-        with open("/opt/keep_ignore.json", "r") as f:
-            return json.load(f)
+    def is_keep_ignore_thread(self, thread: discord.Thread):
+        data = DataIO.get_keep_ignore_targets_in_guild(thread.guild.id)
 
-    def set_ignore_data(self, data: dict):
-        with open("/opt/keep_ignore.json", "w") as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
+        if data is None:
+            return False
 
-    def is_ignore_thread(self, thread: discord.Thread, key: str):
-        json_data = self.get_ignore_data()[key]
-        if thread.id in json_data["threads"] or \
-                thread.parent.id in json_data["channels"] or \
-                thread.guild.id in json_data["guilds"]:
-            return True
-        return False
+        return thread.id in data["threads"] or \
+               thread.parent.id in data["channels"] or \
+               thread.guild.id in data["guilds"]
+
+    def is_notify_ignore_thread(self, thread: discord.Thread):
+        data = DataIO.get_notify_ignore_targets_in_guild(thread.guild.id)
+
+        if data is None:
+            return False
+
+        return thread.id in data["threads"] or \
+               thread.parent.id in data["channels"] or \
+               thread.guild.id in data["guilds"]
 
     async def autocomplete_set_to_ignore_category(self, ctx: discord.commands.context.ApplicationContext):
         values = ["keep", "notify"]
         return [value for value in values if value.startswith(ctx.value)]
 
-    @slash_command(name="set_to_ignore", guild_ids=[958663674216718366, 490892087668244480, 983648664327192576])
+    @slash_command(name="set_to_ignore")
     @commands.has_permissions(ban_members=True)
     async def set_to_ignore(self, ctx: discord.commands.context.ApplicationContext,
                             category: Option(str, 'provide ignore category', autocomplete=autocomplete_set_to_ignore_category),
-                            is_whole_guild: Option(int)):
-        ignore_data = self.get_ignore_data()  # type: dict[str, dict[str, list]]
+                            is_whole_guild: Option(int),
+                            is_whole_category: Option(int)):
         if is_whole_guild == 1:
-            if ctx.guild.id not in ignore_data[category]["guilds"]:
-                ignore_data[category]["guilds"].append(ctx.guild.id)
-                self.logger.info(f"Guild {ctx.guild.name}({ctx.guild.id})を除外しました。")
-                await bot_config.NOTIFY_TO_OWNER(self.bot, f"🧐 Add to {category} ignore: Guild {ctx.guild.name}({ctx.guild.id})")
+            if category == "keep":
+                DataIO.set_keep_ignore_target(guild_id=ctx.guild.id)
+            elif category == "notify":
+                DataIO.set_notify_ignore_target(guild_id=ctx.guild.id)
+
+            self.logger.info(f"Guild {ctx.guild.name}({ctx.guild.id})を{category}から除外しました。")
+            await ctx.respond(f"Guild {ctx.guild.name}({ctx.guild.id})を{category}から除外しました。")
+            await bot_config.NOTIFY_TO_OWNER(self.bot, f"🧐 Add to {category} ignore: Guild {ctx.guild.name}({ctx.guild.id})")
         else:
-            key = None
-            if type(ctx.channel) is discord.channel.TextChannel:
-                key = "channel"
+            key = value = None
+            if is_whole_category == 1:
+                key = "category_id"
+                value = ctx.channel.category.id
+            elif type(ctx.channel) is discord.channel.TextChannel:
+                key = "channel_id"
+                value = ctx.channel.id
             elif type(ctx.channel) is discord.threads.Thread:
-                key = "thread"
+                key = "thread_id"
+                value = ctx.channel.id
+
             if key is not None:
-                if ctx.channel.id not in ignore_data[category][key + "s"]:
-                    ignore_data[category][key + "s"].append(ctx.channel.id)
-                    self.logger.info(f"{key} {ctx.channel.name}({ctx.channel.id})を除外しました。")
-                    await bot_config.NOTIFY_TO_OWNER(self.bot, f"🧐 Add to {category} ignore: {key} {ctx.guild.name}({ctx.guild.id})")
+                if category == "keep":
+                    DataIO.set_keep_ignore_target(**{key: value})
+                elif category == "notify":
+                    DataIO.set_notify_ignore_target(**{key: value})
 
-        self.set_ignore_data(ignore_data)
+                self.logger.info(f"{ctx.guild.name}({ctx.guild.id})/{ctx.channel.name}({ctx.channel.id})が属する{key.removesuffix('_id').capitalize()}を{category}から除外しました。")
+                await ctx.respond(f"{ctx.guild.name}({ctx.guild.id})/{ctx.channel.name}({ctx.channel.id})が属する{key.removesuffix('_id').capitalize()}を{category}から除外しました。")
+                await bot_config.NOTIFY_TO_OWNER(self.bot,
+                                                 f"🧐 Add to {category} ignore: {key.removesuffix('_id').capitalize()} {ctx.guild.name}({ctx.guild.id})/{ctx.channel.name}({ctx.channel.id})")
 
-        await ctx.respond("除外しました")
+            else:
+                await ctx.respond("Error: 追加に失敗しました。")
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -88,7 +107,7 @@ class ThreadKeeper(commands.Cog):
             for channel in guild.channels:
                 if type(channel) is discord.channel.TextChannel:
                     for thread in channel.threads:
-                        if self.is_ignore_thread(thread, "keep"):
+                        if self.is_keep_ignore_thread(thread):
                             self.logger.info(f"Ignoring: {thread.guild.name}/{thread.parent.name}/{thread.name}")
                         else:
                             self.logger.info(f"Keeping: {thread.guild.name}/{thread.parent.name}/{thread.name}")
@@ -102,7 +121,7 @@ class ThreadKeeper(commands.Cog):
 
     @commands.Cog.listener()
     async def on_thread_create(self, thread: discord.Thread):
-        if not self.is_ignore_thread(thread, "notify"):
+        if not self.is_notify_ignore_thread(thread):
             self.logger.info(f"[New] {thread.name}")
             await bot_config.NOTIFY_TO_OWNER(self.bot, f"🆕 Thread created: {thread.guild.name}/{thread.parent.name}/{thread.name}")
             await self.invite_roles(thread)
