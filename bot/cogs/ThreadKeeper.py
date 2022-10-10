@@ -128,7 +128,7 @@ class ThreadKeeper(commands.Cog):
         notify_roles = DataIO.get_notify_roles_in_guild(thread.guild.id)
 
         if notify_roles is not None:
-            msg = await thread.send(MessageTemplates.on_thread_create_main())
+            msg = await thread.send("スレッドが作成されました。")
             await msg.edit(content=f"{msg.content}\n{' '.join([f'<@&{role_id}>' for role_id in notify_roles])}")
 
     @commands.Cog.listener()
