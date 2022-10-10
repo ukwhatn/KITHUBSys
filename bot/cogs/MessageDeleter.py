@@ -15,13 +15,13 @@ class MessageDeleter(commands.Cog):
         self.logger = logging.getLogger(type(self).__name__)
         self.logger.setLevel(logging.DEBUG)
 
-    @slash_command(name="set_to_delete_target")
+    @slash_command(name="set_to_delete_target", description="このChに送信されるメッセージをすべて削除")
     @commands.has_permissions(ban_members=True)
     async def set_to_delete_target(self, ctx: discord.commands.context.ApplicationContext):
         DataIO.set_delete_target(ctx.guild.id, ctx.channel.id)
         await ctx.respond("今後このチャンネルに送信されるすべてのメッセージを削除します。")
 
-    @slash_command(name="remove_from_delete_target")
+    @slash_command(name="remove_from_delete_target", description="削除対象から外す")
     @commands.has_permissions(ban_members=True)
     async def remove_from_delete_target(self, ctx: discord.commands.context.ApplicationContext):
         DataIO.remove_delete_target(ctx.guild.id, ctx.channel.id)
