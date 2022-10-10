@@ -2,12 +2,11 @@ import asyncio
 import logging
 
 import discord
-from config.message_config import MessageTemplates
 from config import bot_config
 from discord.commands import Option, slash_command
 from discord.ext import commands, tasks
 
-from util import DataIO
+from util.dataio import DataIO
 
 
 class ThreadKeeper(commands.Cog):
@@ -114,10 +113,23 @@ class ThreadKeeper(commands.Cog):
                             await self.extend_archive_duration(thread)
         self.logger.info("[Keep] loop finished")
 
+    @slash_command(name="set_notify_role")
+    @commands.has_permissions(ban_members=True)
+    async def set_notify_role(self, ctx: discord.commands.context.ApplicationContext,
+                              roles: str):
+        roles = roles.split(" ")
+        role_ids = [int(role.removeprefix("<@&").removesuffix(">")) for role in roles]
+        for role_id in role_ids:
+            DataIO.set_notify_role(ctx.guild.id, role_id)
+        await ctx.respond(f"Invite対象ロールを設定しました：{' '.join(roles)}")
+
     async def invite_roles(self, thread: discord.Thread):
         await thread.join()
-        msg = await thread.send(MessageTemplates.on_thread_create_main())
-        await msg.edit(content=f"{msg.content}{MessageTemplates.on_thread_create_roles(thread.guild.id)}")
+        notify_roles = DataIO.get_notify_roles_in_guild(thread.guild.id)
+
+        if notify_roles is not None:
+            msg = await thread.send(MessageTemplates.on_thread_create_main())
+            await msg.edit(content=f"{msg.content}\n{' '.join([f'<@&{role_id}>' for role_id in notify_roles])}")
 
     @commands.Cog.listener()
     async def on_thread_create(self, thread: discord.Thread):

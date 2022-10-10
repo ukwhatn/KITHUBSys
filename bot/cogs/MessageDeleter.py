@@ -6,7 +6,7 @@ import discord
 from discord.commands import slash_command
 from discord.ext import commands
 
-from util import DataIO
+from util.dataio import DataIO
 
 
 class MessageDeleter(commands.Cog):

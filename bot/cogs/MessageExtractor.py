@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-import json
-import json
 import logging
 import re
 
 import discord
-from discord.commands import slash_command
 from discord.ext import commands
 
 

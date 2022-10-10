@@ -1,9 +1,13 @@
 import json
+import os.path
 
 
 class DataIO(object):
     def __init__(self):
         self.filename = "/opt/data.json"
+        if not os.path.exists(self.filename):
+            with open(self.filename, "w") as f:
+                json.dump({}, f, indent=4)
 
     def _get_all_data(self):
         with open(self.filename, "r") as f:
@@ -21,7 +25,9 @@ class DataIO(object):
         if "deletion" not in data:
             return None
 
-        if str(guild_id) in data:
+        if str(guild_id) in data["deletion"]:
+            if len(data["deletion"][str(guild_id)]) == 0:
+                return None
             return data["deletion"][str(guild_id)]
 
         return None
@@ -33,7 +39,7 @@ class DataIO(object):
         if "deletion" not in data:
             data["deletion"] = {}
 
-        if str(guild_id) not in data:
+        if str(guild_id) not in data["deletion"]:
             data["deletion"][str(guild_id)] = []
 
         if channel_id not in data["deletion"][str(guild_id)]:
@@ -45,8 +51,50 @@ class DataIO(object):
     def remove_delete_target(guild_id: int, channel_id: int):
         data = DataIO()._get_all_data()
 
-        if "deletion" in data and str(guild_id) in data["deletion"] and channel_id in data["deletion"][str(guild_id)]:
+        if "deletion" in data \
+                and str(guild_id) in data["deletion"] \
+                and channel_id in data["deletion"][str(guild_id)]:
             data["deletion"][str(guild_id)].remove(channel_id)
+
+        DataIO()._save_all_data(data)
+
+    @staticmethod
+    def get_notify_roles_in_guild(guild_id: int) -> list | None:
+        data = DataIO()._get_all_data()
+
+        if "notify_roles" not in data:
+            return None
+
+        if str(guild_id) in data["notify_roles"]:
+            if len(data["notify_roles"][str(guild_id)]) == 0:
+                return None
+            return data["notify_roles"][str(guild_id)]
+
+        return None
+
+    @staticmethod
+    def set_notify_role(guild_id: int, role_id: int):
+        data = DataIO()._get_all_data()
+
+        if "notify_roles" not in data:
+            data["notify_roles"] = {}
+
+        if str(guild_id) not in data["notify_roles"]:
+            data["notify_roles"][str(guild_id)] = []
+
+        if role_id not in data["notify_roles"][str(guild_id)]:
+            data["notify_roles"][str(guild_id)].append(role_id)
+
+        DataIO()._save_all_data(data)
+
+    @staticmethod
+    def remove_notify_roles(guild_id: int, role_id: int):
+        data = DataIO()._get_all_data()
+
+        if "notify_roles" in data \
+                and str(guild_id) in data["notify_roles"] \
+                and role_id in data["notify_roles"][str(guild_id)]:
+            data["notify_roles"][str(guild_id)].remove(role_id)
 
         DataIO()._save_all_data(data)
 
@@ -61,6 +109,8 @@ class DataIO(object):
             return None
 
         if str(guild_id) in data["ignore"]["keep"]:
+            if len(data["ignore"]["keep"][str(guild_id)]) == 0:
+                return None
             return data["ignore"]["keep"][str(guild_id)]
 
         return None
@@ -119,6 +169,8 @@ class DataIO(object):
             return None
 
         if str(guild_id) in data["ignore"]["notify"]:
+            if len(data["ignore"]["notify"][str(guild_id)]) == 0:
+                return None
             return data["ignore"]["notify"][str(guild_id)]
 
         return None
@@ -165,4 +217,3 @@ class DataIO(object):
                 data["ignore"]["notify"]["threads"].append(thread_id)
 
         DataIO()._save_all_data(data)
-
