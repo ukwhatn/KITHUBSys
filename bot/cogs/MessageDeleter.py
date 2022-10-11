@@ -28,6 +28,9 @@ class MessageDeleter(commands.Cog):
         await ctx.respond("メッセージの自動削除を無効化しました。")
 
     def is_delete_target(self, message: discord.Message):
+        if message.channel.type in (discord.ChannelType.private, discord.ChannelType.group):
+            return False
+
         targets = DataIO.get_delete_targets_in_guild(message.guild.id)
         if targets is None:
             return False
