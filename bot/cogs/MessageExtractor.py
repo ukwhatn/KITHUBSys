@@ -47,7 +47,7 @@ class MessageExtractor(commands.Cog):
         )
         embed.set_footer(
                 text=message.channel.name,
-                icon_url=message.guild.icon.url,
+                icon_url=message.guild.icon.url if message.guild.icon is not None else discord.embeds.EmptyEmbed,
         )
         if message.attachments and message.attachments[0].proxy_url:
             embed.set_image(
@@ -111,10 +111,18 @@ class MessageExtractor(commands.Cog):
             channel = await self.bot.fetch_channel(payload.channel_id)
             message = await channel.fetch_message(payload.message_id)
             user = await self.bot.fetch_user(payload.user_id)
+
+            if user.bot:
+                return
+
             if message.author.id == self.bot.user.id:
-                if user.id == channel.owner_id or channel.permissions_for(await channel.guild.fetch_member(user.id)).administrator:
+                if channel.type == discord.ChannelType.private or (
+                        user.id == channel.owner_id or channel.permissions_for(await channel.guild.fetch_member(user.id)).administrator):
                     await message.delete()
-                    self.logger.info(f"Extracted message deleted: {message.guild.name}/{message.channel.name} by {user.name}")
+                    if channel.type == discord.ChannelType.private:
+                        self.logger.info(f"Extracted message deleted: PM with {channel.recipient.name} by {user.name}")
+                    else:
+                        self.logger.info(f"Extracted message deleted: {message.guild.name}/{message.channel.name} by {user.name}")
 
 
 def setup(bot):
