@@ -75,6 +75,29 @@ class ThreadTimeline(commands.Cog):
                     continue
                 await channel.send(embed=self.compose_embed(message))
 
+    @commands.Cog.listener()
+    async def on_message_edit(self, before_message: discord.Message, after_message: discord.Message):
+        if before_message.author.bot:
+            return
+        if before_message.channel.type not in [discord.ChannelType.public_thread, discord.ChannelType.private_thread]:
+            return
+
+        is_target, target_chs = self.is_timeline_target(before_message.channel)
+
+        if is_target:
+            if before_message.content[:7] == "!ignore":
+                return
+
+            for ch in target_chs:
+                channel = self.bot.get_channel(ch)
+                if channel is None:
+                    continue
+
+                async for tl_message in channel.history(oldest_first=True, after=before_message.created_at):
+                    if tl_message.embeds is not None and tl_message.embeds[0].url == before_message.jump_url:
+                        await tl_message.edit(embed=self.compose_embed(after_message))
+                        continue
+
     @slash_command(name="setup_timeline", description="TLの取得対象に設定")
     @commands.has_permissions(ban_members=True)
     async def setup_timeline(self, ctx: discord.commands.context.ApplicationContext, timeline_ch: Option(discord.TextChannel, "タイムラインを表示するチャンネル", required=True)):
