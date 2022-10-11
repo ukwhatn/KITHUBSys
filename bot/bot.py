@@ -18,6 +18,7 @@ bot = commands.Bot(help_command=None,
                    )
 
 bot.load_extension("cogs.Admin")
+bot.load_extension("cogs.CogManager")
 bot.load_extension("cogs.MessageDeleter")
 bot.load_extension("cogs.MessageExtractor")
 bot.load_extension("cogs.PinMessage")
