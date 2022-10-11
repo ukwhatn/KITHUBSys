@@ -18,10 +18,11 @@ bot = commands.Bot(help_command=None,
                    )
 
 bot.load_extension("cogs.Admin")
-bot.load_extension("cogs.ThreadKeeper")
 bot.load_extension("cogs.MessageDeleter")
-bot.load_extension("cogs.PinMessage")
 bot.load_extension("cogs.MessageExtractor")
+bot.load_extension("cogs.PinMessage")
+bot.load_extension("cogs.ThreadKeeper")
+bot.load_extension("cogs.ThreadTimeline")
 
 
 bot.run(bot_config.TOKEN)

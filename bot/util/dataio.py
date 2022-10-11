@@ -99,6 +99,50 @@ class DataIO(object):
         DataIO()._save_all_data(data)
 
     @staticmethod
+    def get_timeline_chs_in_guild(guild_id: int) -> dict | None:
+        data = DataIO()._get_all_data()
+
+        if "timeline_chs" not in data:
+            return None
+
+        if str(guild_id) in data["timeline_chs"]:
+            if len(data["timeline_chs"][str(guild_id)]) == 0:
+                return None
+            return {int(parent_channel_id): data for parent_channel_id, data in data["timeline_chs"][str(guild_id)].items()}
+
+        return None
+
+    @staticmethod
+    def set_timeline_ch(guild_id: int, parent_channel_id: int, timeline_channel_id: int):
+        data = DataIO()._get_all_data()
+
+        if "timeline_chs" not in data:
+            data["timeline_chs"] = {}
+
+        if str(guild_id) not in data["timeline_chs"]:
+            data["timeline_chs"][str(guild_id)] = {}
+
+        if str(parent_channel_id) not in data["timeline_chs"][str(guild_id)]:
+            data["timeline_chs"][str(guild_id)].update({str(parent_channel_id): [timeline_channel_id]})
+        else:
+            if timeline_channel_id not in data["timeline_chs"][str(guild_id)][str(parent_channel_id)]:
+                data["timeline_chs"][str(guild_id)][str(parent_channel_id)].append(timeline_channel_id)
+
+        DataIO()._save_all_data(data)
+
+    @staticmethod
+    def remove_timeline_ch(guild_id: int, parent_channel_id: int, timeline_channel_id: int):
+        data = DataIO()._get_all_data()
+
+        if "timeline_chs" in data \
+                and str(guild_id) in data["timeline_chs"] \
+                and str(parent_channel_id) in data["timeline_chs"][str(guild_id)] \
+                and timeline_channel_id in data["timeline_chs"][str(guild_id)][str(parent_channel_id)]:
+            data["timeline_chs"][str(guild_id)][str(parent_channel_id)].remove(timeline_channel_id)
+
+        DataIO()._save_all_data(data)
+
+    @staticmethod
     def get_keep_ignore_targets_in_guild(guild_id: int) -> dict | None:
         data = DataIO()._get_all_data()
 
