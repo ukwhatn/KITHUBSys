@@ -76,23 +76,30 @@ class MessageExtractor(commands.Cog):
 
     async def extract_message(self, message: discord.Message) -> list[discord.Message]:
         founded_messages = []
-        for ids in re.finditer(self.regex_discord_message_url, message.content):
-            guild_id = int(ids["guild"])
-            channel_id = int(ids["channel"])
-            message_id = int(ids["message"])
-            fetched_message = await self.get_message_from_id(guild_id, channel_id, message_id)
-            if fetched_message is None:
-                continue
-            if not self.is_readable_for_everyone(fetched_message):
-                if not self.has_same_readable_roles(message.channel, fetched_message.channel):
+        contents = [
+            message.content
+        ]
+        if len(message.embeds) > 0:
+            for embed in message.embeds:
+                if embed.description is not None:
+                    contents.append(embed.description)
+
+        for content in contents:
+            for ids in re.finditer(self.regex_discord_message_url, content):
+                guild_id = int(ids["guild"])
+                channel_id = int(ids["channel"])
+                message_id = int(ids["message"])
+                fetched_message = await self.get_message_from_id(guild_id, channel_id, message_id)
+                if fetched_message is None:
                     continue
-            founded_messages.append(fetched_message)
+                if not self.is_readable_for_everyone(fetched_message):
+                    if not self.has_same_readable_roles(message.channel, fetched_message.channel):
+                        continue
+                founded_messages.append(fetched_message)
         return founded_messages
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.author.bot:
-            return
         founded_messages = await self.extract_message(message)
         for founded_message in founded_messages:
             try:

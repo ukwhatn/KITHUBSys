@@ -26,6 +26,13 @@ class PinMessage(commands.Cog):
                 await message.pin()
                 self.logger.info(f"Pinned: {message.guild.name}/{message.channel.name}/{message.content}, by {user.name}")
 
+                # ピン留めした内容をDMに送信
+                dm = await user.create_dm()
+                try:
+                    await dm.send(f"ピン留めしました: {message.jump_url}")
+                except discord.Forbidden:
+                    await channel.send("KITHUBSysからDMを受け取れるよう設定を変更すると、ピン留めした内容がDMに送信されます。", delete_after=5)
+
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
         if payload.emoji.name == "📌":
