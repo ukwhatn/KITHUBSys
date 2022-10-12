@@ -85,6 +85,8 @@ class MessageExtractor(commands.Cog):
                     contents.append(embed.description)
 
         for content in contents:
+            if content is None or len(content) == 0:
+                continue
             for ids in re.finditer(self.regex_discord_message_url, content):
                 guild_id = int(ids["guild"])
                 channel_id = int(ids["channel"])
