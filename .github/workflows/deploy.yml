@@ -11,7 +11,7 @@ on:
 jobs:
   require_restart:
     runs-on: ubuntu-latest
-    if: "! contains(github.event.head_commit.message, '[require_restart]')"
+    if: "contains(github.event.head_commit.message, '[require_restart]')"
     steps:
     - run: echo "Require restart"
   build:
