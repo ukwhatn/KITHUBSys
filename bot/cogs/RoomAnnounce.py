@@ -92,7 +92,7 @@ class RoomManagementPanel(discord.ui.View):
     def get_closed_embed(self, current_embed: discord.Embed) -> discord.Embed:
         return discord.Embed(
                 title=f"[{datetime.now().strftime('%m/%d')}]ACT126は閉室しました",
-                description=f"開室時間：{current_embed.timestamp.strftime('%H:%M:%S')}\n閉室時間：{datetime.now(self.timezone).strftime('%H:%M:%S')}",
+                description=f"開室時間：{current_embed.timestamp.astimezone(self.timezone).strftime('%H:%M:%S')}\n閉室時間：{datetime.now(self.timezone).strftime('%H:%M:%S')}",
                 colour=discord.Colour.red(),
                 timestamp=datetime.now(self.timezone)
         )
