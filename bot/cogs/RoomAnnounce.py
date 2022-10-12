@@ -80,13 +80,18 @@ class RoomManagementPanel(discord.ui.View):
         else:
             timestamp = current_embed.timestamp
 
+        if self.theater_open_time is None:
+            footer_text = "ビブリオシアターの開室時間が取得できませんでした。"
+        else:
+            footer_text = f"ビブリオシアター開館時間：{self.theater_open_time.strftime('%H:%M')} - {self.theater_close_time.strftime('%H:%M')}"
+
         return discord.Embed(
                 title=title,
                 description=description + " ".join(mentions),
                 colour=colour,
                 timestamp=timestamp
         ).set_footer(
-                text=f"ビブリオシアター開館時間：{self.theater_open_time.strftime('%H:%M')} - {self.theater_close_time.strftime('%H:%M')}"
+                text=footer_text
         )
 
     def get_closed_embed(self, current_embed: discord.Embed) -> discord.Embed:
