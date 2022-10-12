@@ -1,6 +1,3 @@
-import logging
-import os
-
 import discord
 from discord.ext import commands
 from discord.commands import Option, slash_command
@@ -12,8 +9,7 @@ class CogManager(commands.Cog):
         self.bot = bot
 
     async def autocomplete_loaded_cog_names(self, ctx: discord.commands.context.ApplicationContext):
-        values = [cog for cog in self.bot.cogs.keys()]
-        return [value for value in values if value.startswith(ctx.value)]
+        return [value for value in self.bot.cogs.keys() if value.startswith(ctx.value)]
 
     async def autocomplete_all_cogfile_names(self, ctx: discord.commands.context.ApplicationContext):
         values = [cog.removeprefix("./opt/cogs/").removesuffix(".py") for cog in glob.glob("./opt/cogs/*.py")]
