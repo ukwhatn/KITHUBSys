@@ -59,6 +59,40 @@ class DataIO(object):
         DataIO()._save_all_data(data)
 
     @staticmethod
+    def get_room_announce_target() -> list | None:
+        data = DataIO()._get_all_data()
+
+        if "room_announce" not in data:
+            return None
+
+        if len(data["room_announce"]) != 0:
+            return data["room_announce"]
+
+        return None
+
+    @staticmethod
+    def set_room_announce_target(channel_id: int):
+        data = DataIO()._get_all_data()
+
+        if "room_announce" not in data:
+            data["room_announce"] = []
+
+        if channel_id not in data["room_announce"]:
+            data["room_announce"].append(channel_id)
+
+        DataIO()._save_all_data(data)
+
+    @staticmethod
+    def remove_room_announce_target(channel_id: int):
+        data = DataIO()._get_all_data()
+
+        if "room_announce" in data \
+                and channel_id in data["room_announce"]:
+            data["room_announce"].remove(channel_id)
+
+        DataIO()._save_all_data(data)
+
+    @staticmethod
     def get_notify_roles_in_guild(guild_id: int) -> list | None:
         data = DataIO()._get_all_data()
 

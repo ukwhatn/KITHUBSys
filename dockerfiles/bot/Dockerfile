@@ -21,6 +21,9 @@ RUN pip install --upgrade pip
 RUN pip install --upgrade setuptools
 RUN python -m pip install --upgrade discord.py
 RUN python -m pip install --upgrade py-cord --pre
+RUN python -m pip install --upgrade httpx
+RUN python -m pip install --upgrade bs4
+RUN python -m pip install --upgrade pytz
 
 RUN echo "Hello, ${BOT_NAME} ready!"
 
