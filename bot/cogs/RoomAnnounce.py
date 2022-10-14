@@ -259,6 +259,8 @@ class RoomManagementPanel(discord.ui.View):
                     await edit_target_message.edit(
                             embed=self.get_closed_embed(edit_target_message.embeds[0])
                     )
+                    # to notify the room is closed
+                    await channel.send("ACT126が閉室しました。", delete_after=1.0)
                     await interaction.response.send_message("全員が退室したため、閉室しました。", ephemeral=True)
                     continue
 
