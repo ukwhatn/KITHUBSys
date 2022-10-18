@@ -76,6 +76,31 @@ class RoomManagementPanel(discord.ui.View):
 
         return None
 
+    def is_admin_interaction(self, interaction: discord.Interaction) -> bool:
+        return interaction.permissions.administrator
+
+    def is_admin_in_the_room(self, guild: discord.Guild, mentions) -> bool:
+        # get roles
+        roles_list=guild.roles
+        # create admin_roles_list
+        admin_roles_list=[]
+        for role in roles_list:
+            if role.permissions.administrator:
+                admin_roles_list.append(role)
+        # create admin_mentions_list
+        admin_mentions_list=[]
+        for role in admin_roles_list:
+            members_list=role.members
+            for member in members_list:
+                admin_mentions_list.append(member.mention)
+        # check if admins are in mentions
+        is_admin_in_the_room=False
+        for mention in mentions:
+            is_admin_in_the_room = mention in admin_mentions_list or is_admin_in_the_room
+        
+        return is_admin_in_the_room
+                
+
     def update_theater_schedule(self) -> None:
         """
         Update the opening hours of the Biblio Theater.
@@ -201,6 +226,9 @@ class RoomManagementPanel(discord.ui.View):
             None
 
         """
+        
+
+
         self.update_theater_schedule()
 
         for channel_id in DataIO.get_room_announce_target():
@@ -212,9 +240,16 @@ class RoomManagementPanel(discord.ui.View):
                 continue
 
             edit_target_message = await self._get_last_message_to_update(channel)
+            
 
             # if the last message is not found(= the room is closed), create a new message
             if edit_target_message is None:
+
+                # if the interaction user is not an admin, rejection the request
+                if not self.is_admin_interaction(interaction):
+                    await interaction.response.send_message("開室の権限がありません", ephemeral=True)
+                    return
+                
                 await channel.send(
                         embed=self.get_opening_embed([interaction.user.mention])
                 )
@@ -254,7 +289,6 @@ class RoomManagementPanel(discord.ui.View):
                     continue
 
                 mentions.remove(interaction.user.mention)
-
                 if len(mentions) == 0:
                     await edit_target_message.edit(
                             embed=self.get_closed_embed(edit_target_message.embeds[0])
@@ -262,6 +296,16 @@ class RoomManagementPanel(discord.ui.View):
                     # to notify the room is closed
                     await channel.send("ACT126が閉室しました。", delete_after=1.0)
                     await interaction.response.send_message("全員が退室したため、閉室しました。", ephemeral=True)
+                    continue
+
+                # If the admin wasn't in the room.
+                if not self.is_admin_in_the_room(channel.guild, mentions):
+                    await edit_target_message.edit(
+                            embed=self.get_closed_embed(edit_target_message.embeds[0])
+                    )
+                    # to notify the room is closed
+                    await channel.send("ACT126が閉室しました。", delete_after=1.0)
+                    await interaction.response.send_message("役員が全員退出したため、閉室しました。", ephemeral=True)
                     continue
 
                 await edit_target_message.edit(
@@ -278,6 +322,11 @@ class RoomManagementPanel(discord.ui.View):
                 continue
 
             edit_target_message = await self._get_last_message_to_update(channel)
+
+            # if the interaction user is not an admin, rejection the request
+            if not self.is_admin_interaction(interaction):
+                await interaction.response.send_message("閉室の権限がありません", ephemeral=True)
+                return
 
             # 未開室
             if edit_target_message is None:
