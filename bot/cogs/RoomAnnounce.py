@@ -81,25 +81,24 @@ class RoomManagementPanel(discord.ui.View):
 
     def is_admin_in_the_room(self, guild: discord.Guild, mentions) -> bool:
         # get roles
-        roles_list=guild.roles
+        roles_list = guild.roles
         # create admin_roles_list
-        admin_roles_list=[]
+        admin_roles_list = []
         for role in roles_list:
             if role.permissions.administrator:
                 admin_roles_list.append(role)
         # create admin_mentions_list
-        admin_mentions_list=[]
+        admin_mentions_list = []
         for role in admin_roles_list:
-            members_list=role.members
+            members_list = role.members
             for member in members_list:
                 admin_mentions_list.append(member.mention)
         # check if admins are in mentions
-        is_admin_in_the_room=False
+        is_admin_in_the_room = False
         for mention in mentions:
             is_admin_in_the_room = mention in admin_mentions_list or is_admin_in_the_room
-        
+
         return is_admin_in_the_room
-                
 
     def update_theater_schedule(self) -> None:
         """
@@ -226,8 +225,6 @@ class RoomManagementPanel(discord.ui.View):
             None
 
         """
-        
-
 
         self.update_theater_schedule()
 
@@ -240,7 +237,6 @@ class RoomManagementPanel(discord.ui.View):
                 continue
 
             edit_target_message = await self._get_last_message_to_update(channel)
-            
 
             # if the last message is not found(= the room is closed), create a new message
             if edit_target_message is None:
@@ -249,7 +245,7 @@ class RoomManagementPanel(discord.ui.View):
                 if not self.is_admin_interaction(interaction):
                     await interaction.response.send_message("開室の権限がありません", ephemeral=True)
                     return
-                
+
                 await channel.send(
                         embed=self.get_opening_embed([interaction.user.mention])
                 )
