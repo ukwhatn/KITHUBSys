@@ -125,8 +125,17 @@ class MessageExtractor(commands.Cog):
                 return
 
             if message.author.id == self.bot.user.id:
-                if channel.type == discord.ChannelType.private or (
-                        user.id == channel.owner_id or channel.permissions_for(await channel.guild.fetch_member(user.id)).administrator):
+                if (
+                        channel.type in (discord.ChannelType.private,)
+                ) or (
+                        channel.type in (discord.ChannelType.public_thread, discord.ChannelType.private_thread)
+                        and (
+                                user.id == channel.owner_id
+                                or channel.permissions_for(await channel.guild.fetch_member(user.id)).administrator
+                        )
+                ) or (
+                        channel.permissions_for(await channel.guild.fetch_member(user.id)).administrator
+                ):
                     await message.delete()
                     if channel.type == discord.ChannelType.private:
                         self.logger.info(f"Extracted message deleted: PM with {channel.recipient.name} by {user.name}")
