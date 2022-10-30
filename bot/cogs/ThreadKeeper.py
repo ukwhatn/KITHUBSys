@@ -2,10 +2,10 @@ import asyncio
 import logging
 
 import discord
-from config import bot_config
 from discord.commands import Option, slash_command
 from discord.ext import commands, tasks
 
+from config import bot_config
 from util.dataio import DataIO
 
 
@@ -84,6 +84,13 @@ class ThreadKeeper(commands.Cog):
     async def on_ready(self):
         self.thread_keep_loop.stop()
         self.thread_keep_loop.start()
+
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if not self.thread_keep_loop.is_running():
+            self.logger.warning("Thread keep loop is not running.")
+            self.thread_keep_loop.start()
+            self.logger.info("Thread keep loop is started.")
 
     async def extend_archive_duration(self, thread: discord.Thread):
 
