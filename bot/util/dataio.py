@@ -293,3 +293,61 @@ class DataIO(object):
                 data["ignore"]["notify"]["threads"].append(thread_id)
 
         DataIO()._save_all_data(data)
+
+    @staticmethod
+    def get_question_forms() -> dict | None:
+        data = DataIO()._get_all_data()
+
+        if "question_forms" not in data:
+            return None
+
+        if len(data["question_forms"]) == 0:
+            return None
+
+        return data["question_forms"]
+
+    @staticmethod
+    def set_question_form(form_id: str, form_name: str, send_to: int):
+        data = DataIO()._get_all_data()
+
+        if "question_forms" not in data:
+            data["question_forms"] = {}
+
+        data["question_forms"][form_id] = {
+            "name":    form_name.strip(),
+            "send_to": send_to
+        }
+
+        DataIO()._save_all_data(data)
+
+    @staticmethod
+    def remove_question_form(form_id: str):
+        data = DataIO()._get_all_data()
+
+        if "question_forms" in data and form_id in data["question_forms"]:
+            data["question_forms"].remove(form_id)
+
+        DataIO()._save_all_data(data)
+
+    @staticmethod
+    def get_form_buttons() -> dict | None:
+        data = DataIO()._get_all_data()
+
+        if "form_buttons" not in data:
+            return None
+
+        if len(data["form_buttons"]) == 0:
+            return None
+
+        return {int(k): v for k, v in data["form_buttons"].items()}
+
+    @staticmethod
+    def set_form_button(message_id: int, form_id: str):
+        data = DataIO()._get_all_data()
+
+        if "form_buttons" not in data:
+            data["form_buttons"] = {}
+
+        data["form_buttons"][str(message_id)] = form_id
+
+        DataIO()._save_all_data(data)

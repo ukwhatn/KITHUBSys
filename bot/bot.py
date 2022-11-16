@@ -25,6 +25,7 @@ bot.load_extension("cogs.PinMessage")
 bot.load_extension("cogs.RoomAnnounce")
 bot.load_extension("cogs.ThreadKeeper")
 bot.load_extension("cogs.ThreadTimeline")
+bot.load_extension("cogs.QuestionForm")
 
 
 bot.run(bot_config.TOKEN)
