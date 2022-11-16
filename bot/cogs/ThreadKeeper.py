@@ -111,7 +111,7 @@ class ThreadKeeper(commands.Cog):
         await bot_config.NOTIFY_TO_OWNER(self.bot, f"👀 Thread keeping......")
         for guild in self.bot.guilds:
             for channel in guild.channels:
-                if type(channel) is discord.channel.TextChannel:
+                if type(channel) in (discord.channel.TextChannel, discord.channel.ForumChannel):
                     for thread in channel.threads:
                         if self.is_keep_ignore_thread(thread):
                             self.logger.info(f"Ignoring: {thread.guild.name}/{thread.parent.name}/{thread.name}")
