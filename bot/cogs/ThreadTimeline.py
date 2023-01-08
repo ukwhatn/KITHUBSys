@@ -85,8 +85,8 @@ class ThreadTimeline(commands.Cog):
         is_target, target_chs = self.is_timeline_target(before_message.channel)
 
         if is_target:
-            if before_message.content[:7] == "!ignore":
-                return
+            # if before_message.content[:7] == "!ignore":
+            #     return
 
             for ch in target_chs:
                 channel = self.bot.get_channel(ch)
