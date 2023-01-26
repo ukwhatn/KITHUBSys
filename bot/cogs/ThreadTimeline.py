@@ -83,7 +83,7 @@ class ThreadTimeline(commands.Cog):
             return
         if before_message.channel.type not in [discord.ChannelType.public_thread, discord.ChannelType.private_thread]:
             return
-        if len(message.content) == 0 and len(message.attachments) == 0:
+        if len(after_message.content) == 0 and len(after_message.attachments) == 0:
             return
 
         is_target, target_chs = self.is_timeline_target(before_message.channel)
