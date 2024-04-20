@@ -1,4 +1,4 @@
-FROM python:3.10.4-alpine
+FROM python:3.12.3-alpine
 USER root
 
 ARG BOT_NAME="kithub-sys"
