@@ -108,7 +108,7 @@ class ThreadKeeper(commands.Cog):
     @tasks.loop(hours=4)
     async def thread_keep_loop(self):
         self.logger.info("[Keep] loop start")
-        await bot_config.NOTIFY_TO_OWNER(self.bot, f"👀 Thread keeping......")
+        # await bot_config.NOTIFY_TO_OWNER(self.bot, f"👀 Thread keeping......")
         for guild in self.bot.guilds:
             for channel in guild.channels:
                 if type(channel) is discord.channel.TextChannel:
