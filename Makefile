@@ -61,6 +61,9 @@ poetry\:reset:
 	poetry env remove $(which python)
 	poetry install
 
+poetry\:shell:
+	poetry shell
+
 dev\:setup:
 	poetry install --with $(POETRY_GROUPS)
 
@@ -76,6 +79,5 @@ envs\:init:
 	cp envs/discord.env.example envs/discord.env
 	cp envs/db.env.example envs/db.env
 	cp envs/sentry.env.example envs/sentry.env
-	cp envs/server.env.example envs/server.env
 
 PHONY: build up down logs ps pr\:create deploy\:prod poetry\:install poetry\:add poetry\:lock poetry\:update poetry\:reset dev\:setup db\:revision\:create db\:migrate envs\:init
