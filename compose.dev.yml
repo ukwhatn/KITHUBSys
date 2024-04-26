@@ -1,0 +1,58 @@
+version: "3"
+
+services:
+  db:
+    image: postgres:16.1
+    env_file:
+      - ./envs/db.env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+    restart: always
+    healthcheck:
+      test: pg_isready -U postgres
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    networks:
+      - db
+
+  discord:
+    build:
+      context: .
+      dockerfile: discord/Dockerfile
+    volumes:
+      - ./discord:/app
+      - ./db:/app/db
+    env_file:
+      - ./envs/discord.env
+      - ./envs/db.env
+      - ./envs/sentry.env
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - db
+
+  db-migrator:
+    build:
+      context: .
+      dockerfile: ./db/Dockerfile
+    tty: true
+    volumes:
+      - ./db:/app
+    env_file:
+      - ./envs/db.env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - db
+
+volumes:
+  pg_data:
+
+networks:
+  db:
+    driver: bridge

@@ -1,8 +1,8 @@
 #file: noinspection YAMLSchemaValidation
-name: deploy
+name: CD
 on:
   push:
-    branches: [ main ]
+    branches: [ change_this_value_to_main ]
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -18,6 +18,4 @@ jobs:
           script: |
             cd /home/ukwhatn/containers/bot/KITHUBSys
             git pull origin main
-            docker compose build
-            docker compose down
-            docker compose up -d
+            make deploy:prod ENV=prod

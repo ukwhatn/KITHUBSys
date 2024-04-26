@@ -1,0 +1,125 @@
+import logging
+
+import discord
+from discord.commands import Option, slash_command
+from discord.ext import commands
+
+from db.package.crud import discord_thread_timeline_channels as db_crud
+from db.package.session import get_db
+
+
+class ThreadTimeline(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.logger = logging.getLogger(type(self).__name__)
+        self.logger.setLevel(logging.DEBUG)
+
+    @staticmethod
+    def is_timeline_target(thread: discord.Thread):
+        with get_db() as db:
+            targets = db_crud.get_channels_by_guild_id_and_parent_channel_id(db, thread.guild.id, thread.parent.id)
+
+        if len(targets) == 0:
+            return False, None
+
+        if thread.parent.id not in [target.parent_channel_id for target in targets]:
+            return False, None
+
+        return True, [target.channel_id for target in targets]
+
+    @staticmethod
+    def compose_embed(message: discord.Message) -> discord.Embed:
+        if len(message.content) == 0:
+            content = "no content"
+        elif len(message.content) > 300:
+            content = message.content[:300] + "..."
+        else:
+            content = message.content
+
+        embed = discord.Embed(
+            title=message.channel.name,
+            url=message.jump_url,
+            description=content,
+            timestamp=message.created_at
+        )
+        if message.author.avatar is None:
+            avatar_url = 'https://cdn.discordapp.com/embed/avatars/0.png'
+        else:
+            avatar_url = message.author.avatar.replace(format="png").url
+        embed.set_author(
+            name=message.author.display_name,
+            icon_url=avatar_url
+        )
+        if message.attachments and message.attachments[0].proxy_url:
+            embed.set_image(
+                url=message.attachments[0].proxy_url
+            )
+        return embed
+
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if message.author.bot:
+            return
+        if message.channel.type not in [discord.ChannelType.public_thread, discord.ChannelType.private_thread]:
+            return
+        if len(message.content) == 0 and len(message.attachments) == 0:
+            return
+
+        is_target, target_chs = self.is_timeline_target(message.channel)
+
+        if is_target:
+            # if message.content[:7] == "!ignore":
+            #     return
+
+            for ch in target_chs:
+                channel = self.bot.get_channel(ch)
+                if channel is None:
+                    continue
+                await channel.send(embed=self.compose_embed(message))
+
+    @commands.Cog.listener()
+    async def on_message_edit(self, before_message: discord.Message, after_message: discord.Message):
+        if before_message.author.bot:
+            return
+        if before_message.channel.type not in [discord.ChannelType.public_thread, discord.ChannelType.private_thread]:
+            return
+        if len(after_message.content) == 0 and len(after_message.attachments) == 0:
+            return
+
+        is_target, target_chs = self.is_timeline_target(before_message.channel)
+
+        if is_target:
+            # if before_message.content[:7] == "!ignore":
+            #     return
+
+            for ch in target_chs:
+                channel = self.bot.get_channel(ch)
+                if channel is None:
+                    continue
+
+                async for tl_message in channel.history(oldest_first=True, after=before_message.created_at):
+                    if tl_message.embeds is not None and tl_message.embeds[0].url == before_message.jump_url:
+                        await tl_message.edit(embed=self.compose_embed(after_message))
+                        continue
+
+    @slash_command(name="setup_timeline", description="TLの取得対象に設定")
+    @commands.has_permissions(ban_members=True)
+    async def setup_timeline(self, ctx: discord.commands.context.ApplicationContext,
+                             timeline_ch: Option(discord.TextChannel, "タイムラインを表示するチャンネル",
+                                                 required=True)):
+        with get_db() as db:
+            db_crud.create(db, ctx.guild.id, ctx.channel.id, timeline_ch.id)
+        await ctx.respond(f"このChのスレッドの内容を<#{timeline_ch.id}>に表示します。", ephemeral=True)
+
+    @slash_command(name="remove_timeline", description="TLの取得対象から削除")
+    @commands.has_permissions(ban_members=True)
+    async def remove_timeline(self, ctx: discord.commands.context.ApplicationContext,
+                              timeline_ch: Option(discord.TextChannel, "タイムラインを表示するチャンネル",
+                                                  required=True)):
+        with get_db() as db:
+            db_crud.delete(db, ctx.guild.id, ctx.channel.id, timeline_ch.id)
+        await ctx.respond(f"このChのスレッドの内容は<#{timeline_ch.id}>に表示されません。", ephemeral=True)
+
+
+def setup(bot):
+    return bot.add_cog(ThreadTimeline(bot))
