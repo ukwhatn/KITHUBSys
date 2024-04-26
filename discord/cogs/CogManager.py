@@ -1,7 +1,8 @@
-import discord
-from discord.ext import commands
-from discord.commands import Option, slash_command
 import glob
+
+import discord
+from discord.commands import Option, slash_command
+from discord.ext import commands
 
 
 class CogManager(commands.Cog):
@@ -12,12 +13,13 @@ class CogManager(commands.Cog):
         return [value for value in self.bot.cogs.keys() if value.startswith(ctx.value)]
 
     async def autocomplete_all_cogfile_names(self, ctx: discord.commands.context.ApplicationContext):
-        values = [cog.removeprefix("./opt/cogs/").removesuffix(".py") for cog in glob.glob("./opt/cogs/*.py")]
+        values = [cog.removeprefix("./app/cogs/").removesuffix(".py") for cog in glob.glob("./app/cogs/*.py")]
         return [value for value in values if value.startswith(ctx.value)]
 
     @slash_command(name="reload", description="指定したCogをリロードします")
     @commands.is_owner()
-    async def reload(self, ctx, modulename: Option(str, 'provide cog name', autocomplete=autocomplete_loaded_cog_names)):
+    async def reload(self, ctx,
+                     modulename: Option(str, 'provide cog name', autocomplete=autocomplete_loaded_cog_names)):
         msg = await ctx.respond(f":repeat: Reloading {modulename}")
         try:
             self.bot.reload_extension(f"cogs.{modulename}")
@@ -37,7 +39,8 @@ class CogManager(commands.Cog):
 
     @slash_command(name="unload", description="指定したCogをアンロードします")
     @commands.is_owner()
-    async def unload(self, ctx, modulename: Option(str, 'provide cog name', autocomplete=autocomplete_loaded_cog_names)):
+    async def unload(self, ctx,
+                     modulename: Option(str, 'provide cog name', autocomplete=autocomplete_loaded_cog_names)):
         msg = await ctx.respond(f":arrow_down: Unloading {modulename}")
         try:
             self.bot.unload_extension(f"cogs.{modulename}")
