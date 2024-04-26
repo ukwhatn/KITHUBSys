@@ -1,12 +1,11 @@
-import asyncio
 import logging
 
 import discord
-from config import bot_config
 from discord.commands import Option, slash_command
-from discord.ext import commands, tasks
+from discord.ext import commands
 
-from util.dataio import DataIO
+from db.package.crud import discord_thread_timeline_channels as db_crud
+from db.package.session import get_db
 
 
 class ThreadTimeline(commands.Cog):
@@ -17,15 +16,16 @@ class ThreadTimeline(commands.Cog):
 
     @staticmethod
     def is_timeline_target(thread: discord.Thread):
-        data = DataIO.get_timeline_chs_in_guild(thread.guild.id)
+        with get_db() as db:
+            targets = db_crud.get_channels_by_guild_id_and_parent_channel_id(db, thread.guild.id, thread.parent.id)
 
-        if data is None:
+        if len(targets) == 0:
             return False, None
 
-        if thread.parent.id not in data:
+        if thread.parent.id not in [target.parent_channel_id for target in targets]:
             return False, None
 
-        return True, data[thread.parent.id]
+        return True, [target.channel_id for target in targets]
 
     @staticmethod
     def compose_embed(message: discord.Message) -> discord.Embed:
@@ -37,22 +37,22 @@ class ThreadTimeline(commands.Cog):
             content = message.content
 
         embed = discord.Embed(
-                title=message.channel.name,
-                url=message.jump_url,
-                description=content,
-                timestamp=message.created_at
+            title=message.channel.name,
+            url=message.jump_url,
+            description=content,
+            timestamp=message.created_at
         )
         if message.author.avatar is None:
             avatar_url = 'https://cdn.discordapp.com/embed/avatars/0.png'
         else:
             avatar_url = message.author.avatar.replace(format="png").url
         embed.set_author(
-                name=message.author.display_name,
-                icon_url=avatar_url
+            name=message.author.display_name,
+            icon_url=avatar_url
         )
         if message.attachments and message.attachments[0].proxy_url:
             embed.set_image(
-                    url=message.attachments[0].proxy_url
+                url=message.attachments[0].proxy_url
             )
         return embed
 
@@ -104,15 +104,21 @@ class ThreadTimeline(commands.Cog):
 
     @slash_command(name="setup_timeline", description="TLの取得対象に設定")
     @commands.has_permissions(ban_members=True)
-    async def setup_timeline(self, ctx: discord.commands.context.ApplicationContext, timeline_ch: Option(discord.TextChannel, "タイムラインを表示するチャンネル", required=True)):
-        DataIO.set_timeline_ch(ctx.guild.id, ctx.channel.id, timeline_ch.id)
-        await ctx.respond(f"このChのスレッドの内容を<#{timeline_ch.id}>に表示します。")
+    async def setup_timeline(self, ctx: discord.commands.context.ApplicationContext,
+                             timeline_ch: Option(discord.TextChannel, "タイムラインを表示するチャンネル",
+                                                 required=True)):
+        with get_db() as db:
+            db_crud.create(db, ctx.guild.id, ctx.channel.id, timeline_ch.id)
+        await ctx.respond(f"このChのスレッドの内容を<#{timeline_ch.id}>に表示します。", ephemeral=True)
 
     @slash_command(name="remove_timeline", description="TLの取得対象から削除")
     @commands.has_permissions(ban_members=True)
-    async def remove_timeline(self, ctx: discord.commands.context.ApplicationContext, timeline_ch: Option(discord.TextChannel, "タイムラインを表示するチャンネル", required=True)):
-        DataIO.remove_timeline_ch(ctx.guild.id, ctx.channel.id, timeline_ch.id)
-        await ctx.respond(f"このChのスレッドの内容は<#{timeline_ch.id}>に表示されません。")
+    async def remove_timeline(self, ctx: discord.commands.context.ApplicationContext,
+                              timeline_ch: Option(discord.TextChannel, "タイムラインを表示するチャンネル",
+                                                  required=True)):
+        with get_db() as db:
+            db_crud.delete(db, ctx.guild.id, ctx.channel.id, timeline_ch.id)
+        await ctx.respond(f"このChのスレッドの内容は<#{timeline_ch.id}>に表示されません。", ephemeral=True)
 
 
 def setup(bot):

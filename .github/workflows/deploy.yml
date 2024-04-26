@@ -16,6 +16,6 @@ jobs:
           username: ${{secrets.SSH_USER}}
           port: ${{secrets.SSH_PORT}}
           script: |
-            cd ${{github.event.repository.name}}
+            cd /home/ukwhatn/containers/bot/KITHUBSys
             git pull origin main
             make deploy:prod ENV=prod

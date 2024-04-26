@@ -8,7 +8,8 @@ import pytz
 from discord.commands import slash_command
 from discord.ext import commands
 
-from util.dataio import DataIO
+from db.package.crud import discord_room_announce_targets as db_crud
+from db.package.session import get_db
 
 
 class RoomManagementPanel(discord.ui.View):
@@ -21,7 +22,6 @@ class RoomManagementPanel(discord.ui.View):
 
         # set logger
         self.logger = logging.getLogger(type(self).__name__)
-        self.logger.setLevel(logging.DEBUG)
 
         # biblio theater schedule
         self.theater_open_time = None  # type: datetime | None
@@ -69,8 +69,10 @@ class RoomManagementPanel(discord.ui.View):
                 open_text, close_text = time.text.split("-")
 
                 # convert to datetime
-                open_time = datetime.now().replace(hour=int(open_text.split(":")[0]), minute=int(open_text.split(":")[1]), second=0, microsecond=0)
-                close_time = datetime.now().replace(hour=int(close_text.split(":")[0]), minute=int(close_text.split(":")[1]), second=0, microsecond=0)
+                open_time = datetime.now().replace(hour=int(open_text.split(":")[0]),
+                                                   minute=int(open_text.split(":")[1]), second=0, microsecond=0)
+                close_time = datetime.now().replace(hour=int(close_text.split(":")[0]),
+                                                    minute=int(close_text.split(":")[1]), second=0, microsecond=0)
 
                 return open_time, close_time
 
@@ -160,12 +162,12 @@ class RoomManagementPanel(discord.ui.View):
 
         # create embed and return
         return discord.Embed(
-                title=title,
-                description=description + " ".join(mentions),
-                colour=colour,
-                timestamp=timestamp
+            title=title,
+            description=description + " ".join(mentions),
+            colour=colour,
+            timestamp=timestamp
         ).set_footer(
-                text=footer_text
+            text=footer_text
         )
 
     def get_closed_embed(self, current_embed: discord.Embed) -> discord.Embed:
@@ -180,13 +182,14 @@ class RoomManagementPanel(discord.ui.View):
         """
         # create embed and return
         return discord.Embed(
-                title=f"[{datetime.now().strftime('%m/%d')}]ACT126は閉室しました",
-                description=f"開室時間：{current_embed.timestamp.astimezone(self.timezone).strftime('%H:%M:%S')}\n閉室時間：{datetime.now(self.timezone).strftime('%H:%M:%S')}",
-                colour=discord.Colour.red(),
-                timestamp=datetime.now(self.timezone)
+            title=f"[{datetime.now().strftime('%m/%d')}]ACT126は閉室しました",
+            description=f"開室時間：{current_embed.timestamp.astimezone(self.timezone).strftime('%H:%M:%S')}\n閉室時間：{datetime.now(self.timezone).strftime('%H:%M:%S')}",
+            colour=discord.Colour.red(),
+            timestamp=datetime.now(self.timezone)
         )
 
-    async def _get_last_message_to_update(self, channel: discord.abc.GuildChannel | discord.Thread | discord.abc.PrivateChannel | None) -> discord.Message | None:
+    async def _get_last_message_to_update(self,
+                                          channel: discord.abc.GuildChannel | discord.Thread | discord.abc.PrivateChannel | None) -> discord.Message | None:
         """
         Get the last message to update.
         Args:
@@ -199,7 +202,9 @@ class RoomManagementPanel(discord.ui.View):
         # search for the last message to update
         edit_target_message = None
 
-        for enter_message in await channel.history(oldest_first=False, after=datetime.now(self.timezone).replace(hour=0, minute=0, second=0, microsecond=0)).flatten():
+        for enter_message in await channel.history(oldest_first=False,
+                                                   after=datetime.now(self.timezone).replace(hour=0, minute=0, second=0,
+                                                                                             microsecond=0)).flatten():
             # no embeds in message
             if len(enter_message.embeds) == 0:
                 continue
@@ -228,7 +233,10 @@ class RoomManagementPanel(discord.ui.View):
 
         self.update_theater_schedule()
 
-        for channel_id in DataIO.get_room_announce_target():
+        with get_db() as db:
+            target_channel_ids = [t.channel_id for t in db_crud.get_targets_by_guild_id(db, interaction.guild.id)]
+
+        for channel_id in target_channel_ids:
             # get channel to notify
             channel = interaction.client.get_channel(channel_id)
 
@@ -247,7 +255,7 @@ class RoomManagementPanel(discord.ui.View):
                     return
 
                 await channel.send(
-                        embed=self.get_opening_embed([interaction.user.mention])
+                    embed=self.get_opening_embed([interaction.user.mention])
                 )
                 await interaction.response.send_message("開室しました", ephemeral=True)
             else:
@@ -260,14 +268,19 @@ class RoomManagementPanel(discord.ui.View):
                 mentions.append(interaction.user.mention)
 
                 await edit_target_message.edit(
-                        embed=self.get_opening_embed(mentions, edit_target_message.embeds[0])
+                    embed=self.get_opening_embed(mentions, edit_target_message.embeds[0])
                 )
                 await interaction.response.send_message("入室しました", ephemeral=True)
 
-    @discord.ui.button(label="自分だけ退室", row=1, style=discord.ButtonStyle.secondary, custom_id="room_management_panel_leave")
+    @discord.ui.button(label="自分だけ退室", row=1, style=discord.ButtonStyle.secondary,
+                       custom_id="room_management_panel_leave")
     async def leave_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.update_theater_schedule()
-        for channel_id in DataIO.get_room_announce_target():
+
+        with get_db() as db:
+            target_channel_ids = [t.channel_id for t in db_crud.get_targets_by_guild_id(db, interaction.guild.id)]
+
+        for channel_id in target_channel_ids:
             channel = interaction.client.get_channel(channel_id)
             if channel is None:
                 continue
@@ -287,7 +300,7 @@ class RoomManagementPanel(discord.ui.View):
                 mentions.remove(interaction.user.mention)
                 if len(mentions) == 0:
                     await edit_target_message.edit(
-                            embed=self.get_closed_embed(edit_target_message.embeds[0])
+                        embed=self.get_closed_embed(edit_target_message.embeds[0])
                     )
                     # to notify the room is closed
                     await channel.send("ACT126が閉室しました。", delete_after=1.0)
@@ -297,7 +310,7 @@ class RoomManagementPanel(discord.ui.View):
                 # If the admin wasn't in the room.
                 if not self.is_admin_in_the_room(channel.guild, mentions):
                     await edit_target_message.edit(
-                            embed=self.get_closed_embed(edit_target_message.embeds[0])
+                        embed=self.get_closed_embed(edit_target_message.embeds[0])
                     )
                     # to notify the room is closed
                     await channel.send("ACT126が閉室しました。", delete_after=1.0)
@@ -305,14 +318,20 @@ class RoomManagementPanel(discord.ui.View):
                     continue
 
                 await edit_target_message.edit(
-                        embed=self.get_opening_embed(mentions, edit_target_message.embeds[0])
+                    embed=self.get_opening_embed(mentions, edit_target_message.embeds[0])
                 )
                 await interaction.response.send_message("退室しました", ephemeral=True)
 
-    @discord.ui.button(label="全員退室", row=2, style=discord.ButtonStyle.danger, custom_id="room_management_panel_close")
+    @discord.ui.button(label="全員退室", row=2, style=discord.ButtonStyle.danger,
+                       custom_id="room_management_panel_close")
     async def close_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.update_theater_schedule()
-        for channel_id in DataIO.get_room_announce_target():
+
+        # TODO: 冗長性排除
+        with get_db() as db:
+            target_channel_ids = [t.channel_id for t in db_crud.get_targets_by_guild_id(db, interaction.guild.id)]
+
+        for channel_id in target_channel_ids:
             channel = interaction.client.get_channel(channel_id)
             if channel is None:
                 continue
@@ -330,7 +349,7 @@ class RoomManagementPanel(discord.ui.View):
 
             else:
                 await edit_target_message.edit(
-                        embed=self.get_closed_embed(edit_target_message.embeds[0])
+                    embed=self.get_closed_embed(edit_target_message.embeds[0])
                 )
 
                 # to notify the room is closed
@@ -356,14 +375,16 @@ class RoomAnnounce(commands.Cog):
     @slash_command(name="setup_room_announce", description="ACT開閉室時の通知Chに設定します")
     @commands.has_permissions(ban_members=True)
     async def setup_room_announce(self, ctx: discord.commands.context.ApplicationContext):
-        DataIO.set_room_announce_target(channel_id=ctx.channel.id)
-        await ctx.respond(f"このChにACT開閉室時の通知を行います。")
+        with get_db() as db:
+            db_crud.create(db, guild_id=ctx.guild.id, channel_id=ctx.channel.id)
+        await ctx.respond(f"このChにACT開閉室時の通知を行います。", ephemeral=True)
 
     @slash_command(name="remove_room_announce", description="ACT開閉室時の通知Chから削除します。")
     @commands.has_permissions(ban_members=True)
     async def remove_room_announce(self, ctx: discord.commands.context.ApplicationContext):
-        DataIO.remove_room_announce_target(channel_id=ctx.channel.id)
-        await ctx.respond(f"このChをACT開閉室時の通知対象から削除しました。")
+        with get_db() as db:
+            db_crud.delete(db, guild_id=ctx.guild.id, channel_id=ctx.channel.id)
+        await ctx.respond(f"このChをACT開閉室時の通知対象から削除しました。", ephemeral=True)
 
 
 def setup(bot):

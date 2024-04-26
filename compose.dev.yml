@@ -23,7 +23,7 @@ services:
       dockerfile: discord/Dockerfile
     volumes:
       - ./discord:/app
-      - ./db/package:/app/db
+      - ./db:/app/db
     env_file:
       - ./envs/discord.env
       - ./envs/db.env

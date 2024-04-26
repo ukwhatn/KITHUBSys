@@ -6,7 +6,10 @@ from discord.commands import Option, slash_command
 from discord.ext import commands, tasks
 
 from config import bot_config
-from util.dataio import DataIO
+from db.package.crud import discord_thread_create_notify_ignore_targets as notify_ignore_crud
+from db.package.crud import discord_thread_create_notify_roles as notify_role_crud
+from db.package.crud import discord_thread_keep_ignore_targets as keep_ignore_crud
+from db.package.session import get_db
 
 
 class ThreadKeeper(commands.Cog):
@@ -16,24 +19,16 @@ class ThreadKeeper(commands.Cog):
         self.logger.setLevel(logging.DEBUG)
 
     def is_keep_ignore_thread(self, thread: discord.Thread):
-        data = DataIO.get_keep_ignore_targets_in_guild(thread.guild.id)
-
-        if data is None:
-            return False
-
-        return thread.id in data["threads"] or \
-               thread.parent.id in data["channels"] or \
-               thread.guild.id in data["guilds"]
+        with get_db() as db:
+            data = keep_ignore_crud.search_targets(db,
+                                                   thread.guild.id, thread.category.id, thread.parent.id, thread.id)
+        return len(data) > 0
 
     def is_notify_ignore_thread(self, thread: discord.Thread):
-        data = DataIO.get_notify_ignore_targets()
-
-        if data is None:
-            return False
-
-        return thread.id in data["threads"] or \
-               thread.parent.id in data["channels"] or \
-               thread.guild.id in data["guilds"]
+        with get_db() as db:
+            data = notify_ignore_crud.search_targets(db,
+                                                     thread.guild.id, thread.category.id, thread.parent.id, thread.id)
+        return len(data) > 0
 
     async def autocomplete_set_to_ignore_category(self, ctx: discord.commands.context.ApplicationContext):
         values = ["keep", "notify"]
@@ -42,43 +37,70 @@ class ThreadKeeper(commands.Cog):
     @slash_command(name="set_to_ignore", description="スレッドを除外対象に設定します")
     @commands.has_permissions(ban_members=True)
     async def set_to_ignore(self, ctx: discord.commands.context.ApplicationContext,
-                            category: Option(str, 'provide ignore category', autocomplete=autocomplete_set_to_ignore_category),
+                            category: Option(str, 'provide ignore category',
+                                             autocomplete=autocomplete_set_to_ignore_category),
                             is_whole_guild: Option(int),
                             is_whole_category: Option(int)):
         if is_whole_guild == 1:
             if category == "keep":
-                DataIO.set_keep_ignore_target(guild_id=ctx.guild.id)
+                with get_db() as db:
+                    keep_ignore_crud.create(db, guild_id=ctx.guild.id)
             elif category == "notify":
-                DataIO.set_notify_ignore_target(guild_id=ctx.guild.id)
+                with get_db() as db:
+                    notify_ignore_crud.create(db, guild_id=ctx.guild.id)
 
             self.logger.info(f"Guild {ctx.guild.name}({ctx.guild.id})を{category}から除外しました。")
-            await ctx.respond(f"Guild {ctx.guild.name}({ctx.guild.id})を{category}から除外しました。")
-            await bot_config.NOTIFY_TO_OWNER(self.bot, f"🧐 Add to {category} ignore: Guild {ctx.guild.name}({ctx.guild.id})")
+            await ctx.respond(f"Guild {ctx.guild.name}({ctx.guild.id})を{category}から除外しました。", ephemeral=True)
+            await bot_config.NOTIFY_TO_OWNER(self.bot,
+                                             f"🧐 Add to {category} ignore: Guild {ctx.guild.name}({ctx.guild.id})")
+
+        elif is_whole_category == 1:
+            if category == "keep":
+                with get_db() as db:
+                    keep_ignore_crud.create(db, category_id=ctx.channel.category.id)
+            elif category == "notify":
+                with get_db() as db:
+                    notify_ignore_crud.create(db, category_id=ctx.channel.category.id)
+
+            self.logger.info(
+                f"Category {ctx.channel.category.name}({ctx.channel.category.id})を{category}から除外しました。")
+            await ctx.respond(
+                f"Category {ctx.channel.category.name}({ctx.channel.category.id})を{category}から除外しました。",
+                ephemeral=True)
+            await bot_config.NOTIFY_TO_OWNER(self.bot,
+                                             f"🧐 Add to {category} ignore: Guild {ctx.guild.name}({ctx.guild.id})")
+
         else:
-            key = value = None
-            if is_whole_category == 1:
-                key = "category_id"
-                value = ctx.channel.category.id
-            elif type(ctx.channel) is discord.channel.TextChannel:
-                key = "channel_id"
-                value = ctx.channel.id
-            elif type(ctx.channel) is discord.threads.Thread:
-                key = "thread_id"
-                value = ctx.channel.id
-
-            if key is not None:
+            if type(ctx.channel) is discord.channel.TextChannel:
                 if category == "keep":
-                    DataIO.set_keep_ignore_target(**{key: value})
+                    with get_db() as db:
+                        keep_ignore_crud.create(db, channel_id=ctx.channel.id)
                 elif category == "notify":
-                    DataIO.set_notify_ignore_target(**{key: value})
+                    with get_db() as db:
+                        notify_ignore_crud.create(db, channel_id=ctx.channel.id)
 
-                self.logger.info(f"{ctx.guild.name}({ctx.guild.id})/{ctx.channel.name}({ctx.channel.id})が属する{key.removesuffix('_id').capitalize()}を{category}から除外しました。")
-                await ctx.respond(f"{ctx.guild.name}({ctx.guild.id})/{ctx.channel.name}({ctx.channel.id})が属する{key.removesuffix('_id').capitalize()}を{category}から除外しました。")
+                self.logger.info(f"Channel {ctx.channel.name}({ctx.channel.id})を{category}から除外しました。")
+                await ctx.respond(f"Channel {ctx.channel.name}({ctx.channel.id})を{category}から除外しました。",
+                                  ephemeral=True)
                 await bot_config.NOTIFY_TO_OWNER(self.bot,
-                                                 f"🧐 Add to {category} ignore: {key.removesuffix('_id').capitalize()} {ctx.guild.name}({ctx.guild.id})/{ctx.channel.name}({ctx.channel.id})")
+                                                 f"🧐 Add to {category} ignore: Channel {ctx.channel.name}({ctx.channel.id})")
+
+            elif type(ctx.channel) is discord.threads.Thread:
+                if category == "keep":
+                    with get_db() as db:
+                        keep_ignore_crud.create(db, thread_id=ctx.channel.id)
+                elif category == "notify":
+                    with get_db() as db:
+                        notify_ignore_crud.create(db, thread_id=ctx.channel.id)
+
+                self.logger.info(f"Thread {ctx.channel.name}({ctx.channel.id})を{category}から除外しました。")
+                await ctx.respond(f"Thread {ctx.channel.name}({ctx.channel.id})を{category}から除外しました。",
+                                  ephemeral=True)
+                await bot_config.NOTIFY_TO_OWNER(self.bot,
+                                                 f"🧐 Add to {category} ignore: Thread {ctx.channel.name}({ctx.channel.id})")
 
             else:
-                await ctx.respond("Error: 追加に失敗しました。")
+                await ctx.respond("Error: 追加に失敗しました。", ephemeral=True)
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -126,13 +148,17 @@ class ThreadKeeper(commands.Cog):
                               roles: str):
         roles = roles.split(" ")
         role_ids = [int(role.removeprefix("<@&").removesuffix(">")) for role in roles]
-        for role_id in role_ids:
-            DataIO.set_notify_role(ctx.guild.id, role_id)
-        await ctx.respond(f"Invite対象ロールを設定しました：{' '.join(roles)}")
+        with get_db() as db:
+            for role_id in role_ids:
+                notify_role_crud.create(db, guild_id=ctx.guild.id, role_id=role_id)
+        await ctx.respond(f"Invite対象ロールを設定しました：{' '.join(roles)}", ephemeral=True)
 
     async def invite_roles(self, thread: discord.Thread):
         await thread.join()
-        notify_roles = DataIO.get_notify_roles_in_guild(thread.guild.id)
+        with get_db() as db:
+            data = notify_role_crud.get_roles_by_guild_id(db, thread.guild.id)
+
+        notify_roles = [role.role_id for role in data]
 
         if notify_roles is not None:
             msg = await thread.send("スレッドが作成されました。")
@@ -142,11 +168,13 @@ class ThreadKeeper(commands.Cog):
     async def on_thread_create(self, thread: discord.Thread):
         if not self.is_notify_ignore_thread(thread):
             self.logger.info(f"[New] {thread.name}")
-            await bot_config.NOTIFY_TO_OWNER(self.bot, f"🆕 Thread created: {thread.guild.name}/{thread.parent.name}/{thread.name}")
+            await bot_config.NOTIFY_TO_OWNER(self.bot,
+                                             f"🆕 Thread created: {thread.guild.name}/{thread.parent.name}/{thread.name}")
             await self.invite_roles(thread)
         else:
             self.logger.info(f"[New/Ignored] {thread.name}")
-            await bot_config.NOTIFY_TO_OWNER(self.bot, f"🙈 Ignored thread created: {thread.guild.name}/{thread.parent.name}/{thread.name}")
+            await bot_config.NOTIFY_TO_OWNER(self.bot,
+                                             f"🙈 Ignored thread created: {thread.guild.name}/{thread.parent.name}/{thread.name}")
 
 
 def setup(bot):

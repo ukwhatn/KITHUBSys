@@ -1,9 +1,9 @@
 import logging
 
-import discord
 import sentry_sdk
 from discord.ext import commands
 
+import discord
 from config import bot_config
 
 logging.basicConfig(
@@ -30,5 +30,12 @@ bot = commands.Bot(help_command=None,
 
 bot.load_extension("cogs.Admin")
 bot.load_extension("cogs.CogManager")
+
+bot.load_extension("cogs.MessageDeleter")
+bot.load_extension("cogs.MessageExtractor")
+bot.load_extension("cogs.PinMessage")
+bot.load_extension("cogs.RoomAnnounce")
+bot.load_extension("cogs.ThreadKeeper")
+bot.load_extension("cogs.ThreadTimeline")
 
 bot.run(bot_config.TOKEN)
