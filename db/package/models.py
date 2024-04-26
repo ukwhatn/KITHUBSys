@@ -29,6 +29,31 @@ class DiscordRoomAnnounceTarget(Base):
     updated_at = Column(DateTime, default=datetime.now(UTC), onupdate=datetime.now(UTC), nullable=False)
 
 
+class DiscordInRoomManager(Base):
+    __tablename__ = 'discord_in_room_managers'
+
+    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+
+    user_id = Column(BigInteger, nullable=False)
+    estimated_close_at = Column(DateTime, nullable=False)
+
+    created_at = Column(DateTime, default=datetime.now(UTC), nullable=False)
+    updated_at = Column(DateTime, default=datetime.now(UTC), onupdate=datetime.now(UTC), nullable=False)
+
+
+class DiscordRoomAnnounceMessage(Base):
+    __tablename__ = 'discord_room_announce_messages'
+
+    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+
+    guild_id = Column(BigInteger, index=True, nullable=False)
+    channel_id = Column(BigInteger, nullable=False)
+    message_id = Column(BigInteger, nullable=False)
+
+    created_at = Column(DateTime, default=datetime.now(UTC), nullable=False)
+    updated_at = Column(DateTime, default=datetime.now(UTC), onupdate=datetime.now(UTC), nullable=False)
+
+
 class DiscordThreadCreateNotifyRole(Base):
     __tablename__ = 'discord_thread_create_notify_roles'
 
