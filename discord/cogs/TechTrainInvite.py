@@ -1,4 +1,5 @@
 import logging
+import re
 
 import discord
 from discord.commands import slash_command
@@ -93,18 +94,27 @@ class TechTrainInvite(commands.Cog):
 
     @slash_command(name="tt_invite", description="TechTrainの招待リンクを送信します")
     @discord.commands.default_permissions(administrator=True)
-    async def room_manager(
+    async def tt_invite(
             self, ctx: discord.commands.context.ApplicationContext,
             user: discord.Option(discord.User, "TechTrainに招待するユーザー", required=True),
             invite_url: discord.Option(str, "TechTrainの招待リンク", required=True),
             email: discord.Option(str, "TechTrainの招待リンクを送信するメールアドレス", required=True)
     ):
+        # バリデーション
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            await ctx.respond("メールアドレスが正しくありません。", ephemeral=True)
+            return
+
+        if not re.match(r"https://techtrain.dev/invited-signup\?invitation_code=", invite_url):
+            await ctx.respond("招待リンクが正しくありません。", ephemeral=True)
+            return
+
         # respond
         await ctx.respond(f"{user.mention}にTechTrainの招待リンクを送信します。", ephemeral=True)
 
         # 保存
         with get_db() as db:
-            invite = invites_crud.create(db, ctx.guild.id, user.id, invite_url, email, ctx.author.id)
+            invite = invites_crud.create(db, ctx.guild.id, user.id, email, invite_url, ctx.author.id)
 
         # 送信先Chを取得
         notification_channels = await TechTrainInviteUtility.get_notification_channels(self.bot, ctx.guild.id)
