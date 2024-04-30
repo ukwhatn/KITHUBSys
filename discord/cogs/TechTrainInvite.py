@@ -133,8 +133,12 @@ class TechTrainInvite(commands.Cog):
         embed.set_footer(text=str(invite.id))
 
         # userのDMに送信
-        dm_channel = await user.create_dm()
-        await dm_channel.send("**【KITHUBからのお知らせ】**", embed=embed, view=TechTrainInviteResponseView())
+        try:
+            await user.send("**【KITHUBからのお知らせ】**", embed=embed, view=TechTrainInviteResponseView())
+        except discord.errors.Forbidden as e:
+            await ctx.respond(f"{user.mention}のDMが無効化されているため、招待リンクを送信できませんでした。",
+                              ephemeral=True)
+            return
 
         # 送信をチャンネルに通知
         notification_embed = discord.Embed(
