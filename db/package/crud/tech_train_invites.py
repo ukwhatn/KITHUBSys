@@ -50,7 +50,7 @@ def complete(
     if invite is None:
         return None
 
-    invite.completed = True
+    invite.is_completed = True
     db.commit()
     db.refresh(invite)
     return invite
