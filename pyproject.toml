@@ -11,7 +11,7 @@ python = "^3.10"
 [tool.poetry.group.discord]
 optional = true
 [tool.poetry.group.discord.dependencies]
-sentry-sdk = "2.0.0"
+sentry-sdk = "2.0.1"
 py-cord = "2.5.0"
 bs4 = "^0.0.2"
 httpx = "^0.27.0"
@@ -23,7 +23,7 @@ optional = true
 flake8 = "^7.0.0"
 mypy = "^1.10.0"
 isort = "^5.13.2"
-black = "^24.4.0"
+black = "^24.4.2"
 
 [tool.poetry.group.db]
 optional = true
