@@ -65,6 +65,9 @@ class TechTrainInviteResponseView(discord.ui.View):
         button.disabled = True
         await interaction.response.edit_message(view=self)
 
+        # respond
+        await interaction.response.send_message("完了報告を受領しました！")
+
         # 送信先Chを取得
         notification_channels = await TechTrainInviteUtility.get_notification_channels(
             interaction.client,
