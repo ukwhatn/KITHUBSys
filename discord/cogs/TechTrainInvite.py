@@ -1,4 +1,5 @@
 import logging
+import re
 
 import discord
 from discord.commands import slash_command
@@ -62,6 +63,8 @@ class TechTrainInviteResponseView(discord.ui.View):
 
         # ボタンを無効化
         button.disabled = True
+        button.label = "完了報告を送信しました"
+        button.style = discord.ButtonStyle.success
         await interaction.response.edit_message(view=self)
 
         # 送信先Chを取得
@@ -93,18 +96,27 @@ class TechTrainInvite(commands.Cog):
 
     @slash_command(name="tt_invite", description="TechTrainの招待リンクを送信します")
     @discord.commands.default_permissions(administrator=True)
-    async def room_manager(
+    async def tt_invite(
             self, ctx: discord.commands.context.ApplicationContext,
             user: discord.Option(discord.User, "TechTrainに招待するユーザー", required=True),
             invite_url: discord.Option(str, "TechTrainの招待リンク", required=True),
             email: discord.Option(str, "TechTrainの招待リンクを送信するメールアドレス", required=True)
     ):
+        # バリデーション
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            await ctx.respond("メールアドレスが正しくありません。", ephemeral=True)
+            return
+
+        if not re.match(r"https://techtrain.dev/invited-signup\?invitation_code=", invite_url):
+            await ctx.respond("招待リンクが正しくありません。", ephemeral=True)
+            return
+
         # respond
         await ctx.respond(f"{user.mention}にTechTrainの招待リンクを送信します。", ephemeral=True)
 
         # 保存
         with get_db() as db:
-            invite = invites_crud.create(db, ctx.guild.id, user.id, invite_url, email, ctx.author.id)
+            invite = invites_crud.create(db, ctx.guild.id, user.id, email, invite_url, ctx.author.id)
 
         # 送信先Chを取得
         notification_channels = await TechTrainInviteUtility.get_notification_channels(self.bot, ctx.guild.id)
@@ -120,8 +132,12 @@ class TechTrainInvite(commands.Cog):
         embed.set_footer(text=str(invite.id))
 
         # userのDMに送信
-        dm_channel = await user.create_dm()
-        await dm_channel.send("**【KITHUBからのお知らせ】**", embed=embed, view=TechTrainInviteResponseView())
+        try:
+            await user.send("**【KITHUBからのお知らせ】**", embed=embed, view=TechTrainInviteResponseView())
+        except discord.errors.Forbidden as e:
+            await ctx.respond(f"{user.mention}のDMが無効化されているため、招待リンクを送信できませんでした。",
+                              ephemeral=True)
+            return
 
         # 送信をチャンネルに通知
         notification_embed = discord.Embed(
