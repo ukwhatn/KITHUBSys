@@ -1,6 +1,6 @@
 from datetime import datetime, UTC
 
-from sqlalchemy import Column, Integer, BigInteger, DateTime
+from sqlalchemy import Column, Integer, BigInteger, DateTime, Boolean, String
 
 from .connection import Base
 
@@ -102,6 +102,36 @@ class DiscordThreadTimelineChannel(Base):
     guild_id = Column(BigInteger, index=True, nullable=False)
     parent_channel_id = Column(BigInteger, index=True, nullable=False)
     channel_id = Column(BigInteger, nullable=False)
+
+    created_at = Column(DateTime, default=datetime.now(UTC), nullable=False)
+    updated_at = Column(DateTime, default=datetime.now(UTC), onupdate=datetime.now(UTC), nullable=False)
+
+
+class TechTrainInviteManagementChannel(Base):
+    __tablename__ = 'tech_train_invite_management_channels'
+
+    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+
+    guild_id = Column(BigInteger, index=True, nullable=False)
+    channel_id = Column(BigInteger, nullable=False)
+
+    created_at = Column(DateTime, default=datetime.now(UTC), nullable=False)
+    updated_at = Column(DateTime, default=datetime.now(UTC), onupdate=datetime.now(UTC), nullable=False)
+
+
+class TechTrainInvite(Base):
+    __tablename__ = 'tech_train_invites'
+
+    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+
+    guild_id = Column(BigInteger, index=True, nullable=False)
+    user_id = Column(BigInteger, nullable=False)
+    email = Column(String, nullable=False)
+    invite_url = Column(String, nullable=False)
+
+    sender_id = Column(BigInteger, nullable=False)
+
+    is_completed = Column(Boolean, default=False, nullable=False)
 
     created_at = Column(DateTime, default=datetime.now(UTC), nullable=False)
     updated_at = Column(DateTime, default=datetime.now(UTC), onupdate=datetime.now(UTC), nullable=False)
