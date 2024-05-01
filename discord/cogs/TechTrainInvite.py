@@ -5,6 +5,7 @@ import discord
 from discord.commands import slash_command
 from discord.ext import commands
 
+from config.bot_config import TECHTRAIN_SLACK_INVITE_URL
 from db.package.crud import tech_train_invite_management_channels as invite_management_channels_crud
 from db.package.crud import tech_train_invites as invites_crud
 from db.package.session import get_db
@@ -129,6 +130,15 @@ class TechTrainInvite(commands.Cog):
         )
         embed.add_field(name="招待URL", value=invite_url, inline=False)
         embed.add_field(name="メールアドレス", value=email, inline=False)
+        embed.add_field(name="フロー", value="\n".join([
+            "**1. 上記の招待URLからTechTrainに登録**",
+            "",
+            "**2. Slackワークスペースに参加**",
+            f"[参加URL]({TECHTRAIN_SLACK_INVITE_URL})",
+            "※ 上記のTechTrainに登録したメールアドレスで参加してください",
+            "",
+            "**3. 以下のボタンから完了報告を行う**"
+        ]), inline=False)
         embed.set_footer(text=str(invite.id))
 
         # userのDMに送信
