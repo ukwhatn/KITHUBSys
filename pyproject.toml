@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "kithubsys"
-version = "1.0.0"
-description = "A discord bot stack for KINDAI Info-Tech HUB"
+name = "application-template"
+version = "0.1.0"
+description = "A template for creating a new application"
 authors = ["Yuki Watanabe <ukwhatn@gmail.com>"]
 package-mode = false
 
@@ -13,9 +13,14 @@ optional = true
 [tool.poetry.group.discord.dependencies]
 sentry-sdk = "2.3.1"
 py-cord = "2.5.0"
-bs4 = "^0.0.2"
-httpx = "^0.27.0"
-pytz = "^2024.1"
+
+[tool.poetry.group.server]
+optional = true
+[tool.poetry.group.server.dependencies]
+fastapi = "^0.111.0"
+uvicorn = { extras = ["standard"], version = "^0.30.0" }
+websockets = "^12.0"
+redis = "^5.0.4"
 
 [tool.poetry.group.dev]
 optional = true
