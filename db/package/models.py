@@ -135,3 +135,22 @@ class TechTrainInvite(Base):
 
     created_at = Column(DateTime, default=datetime.now(UTC), nullable=False)
     updated_at = Column(DateTime, default=datetime.now(UTC), onupdate=datetime.now(UTC), nullable=False)
+
+
+class ReadLaterMessage(Base):
+    __tablename__ = 'read_later_message'
+
+    # PK
+    id = Column(Integer, primary_key=True)
+
+    # メッセージを保存したユーザー
+    user_id = Column(BigInteger, nullable=False)
+    # ギルドID
+    guild_id = Column(BigInteger, nullable=False)
+    # メッセージを保存したチャンネル
+    channel_id = Column(BigInteger, nullable=False)
+    # メッセージID
+    message_id = Column(BigInteger, nullable=False)
+
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
