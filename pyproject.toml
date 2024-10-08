@@ -21,7 +21,7 @@ pytz = "^2024.1"
 optional = true
 [tool.poetry.group.dev.dependencies]
 flake8 = "^7.1.1"
-mypy = "^1.11.1"
+mypy = "^1.11.2"
 isort = "^5.13.2"
 black = "^24.8.0"
 
