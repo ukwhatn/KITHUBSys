@@ -18,36 +18,42 @@ jobs:
     - name: Build and start services
       run: make up
 
-    - name: Wait for services to be ready
+    - name: Wait for services to be ready and check health
       run: |
-        max_retries=10
-        retry_interval=10
+        max_retries=5
+        retry_interval=5
         
         for i in $(seq 1 $max_retries)
         do
-          if ! make ps | grep -q "health: starting"; then
-            echo "All services have finished starting!"
-            break
-          else
-            echo "Waiting for services to finish starting... (Attempt $i/$max_retries)"
+          service_status=$(make ps)
+          if echo "$service_status" | grep -qiE "(starting|restarting|unhealthy)"; then
+            echo "Services are still initializing or unhealthy... (Attempt $i/$max_retries)"
+            echo "$service_status"
+            
+            if [ $i -eq $max_retries ]; then
+              echo "Services did not stabilize within the allocated time."
+              make logs:once
+              exit 1
+            fi
+            
             sleep $retry_interval
-          fi
-          
-          if [ $i -eq $max_retries ]; then
-            echo "Services did not finish starting within the allocated time."
-            make logs:once
-            exit 1
+          else
+            echo "All services have stabilized!"
+            break
           fi
         done
         
-        if make ps | grep -q "unhealthy"; then
-          echo "Some services are unhealthy:"
-          make ps
+        # Final health check
+        service_status=$(make ps)
+        if echo "$service_status" | grep -qiE "(unhealthy|exited|dead)"; then
+          echo "Some services are in an unhealthy state:"
+          echo "$service_status"
           make logs:once
           exit 1
         else
           echo "All services are healthy!"
-          make ps
+          echo "$service_status"
+          make logs:once
         fi
 
     - name: Clean up
