@@ -14,9 +14,6 @@ jobs:
       run: |
         make envs:setup
         sed -i 's/DISCORD_BOT_TOKEN=""/DISCORD_BOT_TOKEN="${{ secrets.CIBOT_TOKEN }}"/' envs/discord.env
-        cat envs/discord.env
-        cat ${{ secrets.CIBOT_TOKEN }}
-        exit 1
 
     - name: Build and start services
       run: make up
