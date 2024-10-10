@@ -2,6 +2,9 @@ name: Check services healthy
 
 on:
   pull_request:
+    branches:
+      - main
+      - develop
 
 jobs:
   check_healthy:
